@@ -1,10 +1,16 @@
 package main;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
 
 public class Interface {
     private String server_address;
@@ -13,16 +19,21 @@ public class Interface {
         this.server_address = serverAddress;
     }
 
-    private JSONObject sendRequest(String api_call) {
+    public JSONObject getRequest (String api_call) {
         String url_str = String.format("%s/api/%s", this.server_address, api_call);
 
         try {
-            URL url = new URL(url_str);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url_str))
+                    .GET()
+                    .build();
 
-            con.connect();
+            HttpResponse<String> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofString());
 
+            JSONParser parser = new JSONParser();
+            return (JSONObject)parser.parse(response.body());
         }
         catch (java.net.MalformedURLException e) {
             e.printStackTrace();
@@ -31,15 +42,57 @@ public class Interface {
         catch (java.net.ProtocolException e) {
             e.printStackTrace();
             System.err.printf("Protocol error for '%s'\n", url_str);
-
         } catch (IOException e) {
             e.printStackTrace();
             System.err.printf("Could not connect to '%s'\n", url_str);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            System.err.println("Not parse JSON string");
+            e.printStackTrace();
         }
+
+        return null;
+    }
+
+    public JSONObject postRequest(String api_call, JSONObject post) {
+        String url_str = String.format("%s/api/%s", this.server_address, api_call);
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url_str))
+                    .POST(HttpRequest.BodyPublishers.ofString(post.toJSONString()))
+                    .build();
+
+            HttpResponse<String> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+
+            JSONParser parser = new JSONParser();
+            return (JSONObject)parser.parse(response.body());
+        }
+        catch (java.net.MalformedURLException e) {
+            e.printStackTrace();
+            System.err.printf("Invalid url '%s'\n", url_str);
+        }
+        catch (java.net.ProtocolException e) {
+            e.printStackTrace();
+            System.err.printf("Protocol error for '%s'\n", url_str);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.printf("Could not connect to '%s'\n", url_str);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            System.err.println("Not parse JSON string");
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     public String getPath(String path) {
-        return String.format()
+        return String.format("%s/%s", this.server_address, path);
     }
 
     /**
@@ -60,16 +113,26 @@ public class Interface {
      * Search for recipes given an ingredient
      * @return a pollable object with nothing initially polled
      */
-    public Pollable<Recipe> searchIngredient(Ingredient ing) {
-        //TODO
-        return null;
+    public Search searchIngredients(ArrayList<Ingredient> ing) {
+        JSONArray arr = new JSONArray();
+        for (Ingredient i : ing) {
+            arr.add(i.get_obj());
+        }
+
+        JSONObject post_data = new JSONObject();
+        post_data.put("search", arr);
+
+        JSONObject response = this.postRequest("search/i", post_data);
+
+        assert response != null;
+        return new Search(this, (String)response.get("search_id"));
     }
 
     /**
      * Search for recipes given a tag
      * @return a pollable object with nothing initially polled
      */
-    public Pollable<Recipe> searchTag(Tag tag) {
+    public Search searchTags(ArrayList<Tag> tags) {
         //TODO
         return null;
     }
@@ -78,7 +141,7 @@ public class Interface {
      * Search for recipes given keywords
      * @return a pollable object with nothing initially polled
      */
-    public Pollable<Recipe> searchRecipe(String search) {
+    public Search searchRecipes(String search) {
         //TODO
         return null;
     }
