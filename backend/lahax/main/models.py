@@ -158,28 +158,21 @@ class Search(models.Model):
         s.save()
 
         if search_type == 'T':
-            print('in tag search')
             tags = []
             for x in arguments:
-                tags.extend(Tag.objects.filter(name__icontains=x))
-            print(tags)
+                tags.extend(Tag.objects.filter(name__iexact=x))
             for t in tags:
                 recipes.append(t.recipe_set.all())           
         elif search_type == 'I':
-            print('in ingredient search')
             ingredients = []
             for x in arguments:
-                ingredients.extend(Ingredient.objects.filter(name__icontains=x))
-            print(ingredients)
+                ingredients.extend(Ingredient.objects.filter(name__iexact=x))
             for i in ingredients:
                 recipes.append(i.recipe_set.all())
         else:
-            print('in keyword search')
             for x in arguments:
-                recipes.append(Recipe.objects.filter(name__icontains=x))
-
+                recipes.append(Recipe.objects.filter(name__iexact=x))
         print(len(recipes))
-        print(recipes)
 
         for sets in recipes:
             print(len(sets))
