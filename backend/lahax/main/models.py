@@ -186,11 +186,30 @@ class Search(models.Model):
         s.save()
         
         return s
+    
 
 class RecipeSearch(models.Model):
     parent_search = models.ForeignKey(Search, on_delete=models.CASCADE)
     parent_recipe = models.ForeignKey(Recipe, on__delete=models.CASCADE)
     matches = models.IntegerField(default=0)
+
+    def __lt__(self, other):
+        if self.matches < other.matches:
+            return True
+        elif self.matches > other.matches:
+            return False
+        else:
+            if self.parent_recipe.rating < other.parent_recipe.rating:
+                return True
+            elif self.parent_recipe.rating > other.parent_recipe.rating:
+                return False
+            else:
+                if self.parent_recipe.rating_n < other.parent.recipe_n:
+                    return True
+                elif self.parent_recipe.rating_n < other.parent.recipe_n:
+                    return False
+                else:
+                    return self.parent_recipe.name < other.parent_recipe.name
     
 class User(AbstractBaseUser):
     email = models.EmailField(
