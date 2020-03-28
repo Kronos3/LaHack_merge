@@ -1,6 +1,8 @@
 from django.http import HttpResponse, StreamingHttpResponse, HttpResponseRedirect
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
+from oauth2client import OAuth2WebServerFlow
+
 
 # Use the client_secret.json file to identify the application requesting
 # authorization. The client ID (from that file) and access scopes are required.
@@ -32,3 +34,11 @@ def login(request):
 
 
 def search_ingredient(request):
+    pass
+
+class BuildFlow:
+    def __init__(self):
+        self.flow = OAuth2WebServerFlow(settings.CLIENT_ID,
+                                   settings.CLIENT_SECRET,
+                               scope='https://www.googleapis.com/auth/fusiontables',
+                                 redirect_uri=settings.REDIRECT_URI)
