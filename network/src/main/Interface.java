@@ -19,7 +19,7 @@ public class Interface {
         try {
             URL url = new URL(url_str);
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
+            con.setRequestMethod("GET");
 
             con.connect();
 
@@ -38,13 +38,22 @@ public class Interface {
         }
     }
 
+    public String getPath(String path) {
+        return String.format()
+    }
+
     /**
-     * Send a oauth2 login request to the backend
+     * Send a oauth2 login request to the backend.
+     * This just returns the site that should be loaded
+     * to begin the oauth.
+     *
+     * Once the user is redirected to the homepage, this dialog should
+     * close and the login_meta function should be called.
+     *
      * @return the URL that should be loaded for authentication
      */
     public String login() {
-        //TODO
-        return null;
+        return "https://ingredible.tech/oauth/";
     }
 
     /**
