@@ -158,22 +158,31 @@ class Search(models.Model):
         s.save()
 
         if search_type == 'T':
+            print('in tag search')
             tags = []
             for x in arguments:
                 tags.extend(Tag.objects.filter(name__icontains=x))
+            print(tags)
             for t in tags:
                 recipes.append(t.recipe_set.all())           
         elif search_type == 'I':
+            print('in ingredient search')
             ingredients = []
             for x in arguments:
                 ingredients.extend(Ingredient.objects.filter(name__icontains=x))
+            print(ingredients)
             for i in ingredients:
                 recipes.append(i.recipe_set.all())
         else:
+            print('in keyword search')
             for x in arguments:
                 recipes.append(Recipe.objects.filter(name__icontains=x))
 
+        print(len(recipes))
+        print(recipes)
+
         for sets in recipes:
+            print(len(sets))
             for r in sets:
                 temp = RecipeSearch.objects.filter(parent_search=s, parent_recipe=r)
                 if len(temp) == 0:
@@ -190,7 +199,7 @@ class Search(models.Model):
 
 class RecipeSearch(models.Model):
     parent_search = models.ForeignKey(Search, on_delete=models.CASCADE)
-    parent_recipe = models.ForeignKey(Recipe, on__delete=models.CASCADE)
+    parent_recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     matches = models.IntegerField(default=0)
 
     def __lt__(self, other):
