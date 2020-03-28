@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardviewdelegate"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius = "10dp">
+
+    <RelativeLayout
+        android:id="@+id/cardLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/recipeImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true">
+
+
+        </androidx.appcompat.widget.AppCompatImageView>
+
+        <TextView
+            android:id="@+id/recipeName"
+            android:layout_toRightOf="@+id/recipeImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DefaulName">
+        </TextView>
+
+        <com.example.lahacksfront.customListView
+            android:id="@+id/recipeIngredients"
+            android:layout_toRightOf="@+id/recipeName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+        </com.example.lahacksfront.customListView>
+
+
+
+
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>
