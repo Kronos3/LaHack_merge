@@ -5,15 +5,7 @@ from django.db import models
 from datetime import datetime
 
 
-class Searchable(models.Model):
-    name = models.CharField(max_length=256)
-    
-    @staticmethod
-    def search(keyword):
-        return Searchable.objects.filter(name__contains=keyword)
-
-
-class Tag(Searchable):
+class Tag(models.Model):
     @staticmethod
     def create(name):
         tags = Tag.objects.filter(name__exact=name)
@@ -25,9 +17,10 @@ class Tag(Searchable):
         
         return tags[0]
     
+    name = models.CharField(max_length=256)
 
 
-class Ingredient(Searchable):
+class Ingredient(models.Model):
     @staticmethod
     def create(name):
         ingredients = Ingredient.objects.filter(name__exact=name)
@@ -37,6 +30,8 @@ class Ingredient(Searchable):
             return ingredients
         
         return ingredients[0]
+    
+    name = models.CharField(max_length=256)
 
 
 class Recipe(models.Model):
