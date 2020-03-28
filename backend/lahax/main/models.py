@@ -1,5 +1,3 @@
-import json
-
 import requests
 from bs4 import BeautifulSoup
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -7,7 +5,15 @@ from django.db import models
 from datetime import datetime
 
 
-class Tag(models.Model):
+class Searchable(models.Model):
+    name = models.CharField(max_length=256)
+    
+    @staticmethod
+    def search(keyword):
+        return Searchable.objects.filter(name__contains=keyword)
+
+
+class Tag(Searchable):
     @staticmethod
     def create(name):
         tags = Tag.objects.filter(name__exact=name)
@@ -19,10 +25,9 @@ class Tag(models.Model):
         
         return tags[0]
     
-    name = models.CharField(max_length=256)
 
 
-class Ingredient(models.Model):
+class Ingredient(Searchable):
     @staticmethod
     def create(name):
         ingredients = Ingredient.objects.filter(name__exact=name)
@@ -32,8 +37,6 @@ class Ingredient(models.Model):
             return ingredients
         
         return ingredients[0]
-    
-    name = models.CharField(max_length=256)
 
 
 class Recipe(models.Model):
@@ -157,6 +160,8 @@ class Search(models.Model):
     
     @staticmethod
     def start_search(argument: str, search_type='K'):
+        
+        
         return Search(search_type=search_type, found_recipes=[], sent=0, keyword=argument)
 
 
