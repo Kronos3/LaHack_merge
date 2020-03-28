@@ -174,17 +174,21 @@ class Search(models.Model):
                 recipes.append(Recipe.objects.filter(name__iexact=x))
         print(len(recipes))
 
+        rs_list = []
+        r_list = []
+        
         for sets in recipes:
             print(len(sets))
             for r in sets:
-                temp = RecipeSearch.objects.filter(parent_search=s, parent_recipe=r)
-                if len(temp) == 0:
-                    searched = RecipeSearch(parent_search=s, parent_recipe=r, matches=1)
-                    searched.save()
+                if r not in r_list:
+                    r_list.append(r)
+                    rs_list.append(RecipeSearch(parent_search=s, parent_recipe=r, matches=1))
                 else:
-                    temp[0].matches += 1
-                    temp[0].save()
-        
+                    rs_list[r_list.index(r)].matches += 1
+
+        for rs in rs_list:
+            rs.save()
+
         s.save()
         
         return s
