@@ -22,7 +22,7 @@ public class Interface {
             con.setRequestMethod("POST");
 
             con.connect();
-            
+
         }
         catch (java.net.MalformedURLException e) {
             e.printStackTrace();

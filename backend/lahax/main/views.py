@@ -15,6 +15,7 @@ flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
 # you will get a 'redirect_uri_mismatch' error.
 flow.redirect_uri = 'https://www.example.com/oauth2callback'
 
+
 def login(request):
     token_request_uri = "https://accounts.google.com/o/oauth2/auth"
     response_type = "code"
@@ -29,3 +30,5 @@ def login(request):
         scope=scope)
     return HttpResponseRedirect(url)
 
+
+def search_ingredient(request):
