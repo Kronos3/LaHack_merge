@@ -194,22 +194,20 @@ class RecipeSearch(models.Model):
     matches = models.IntegerField(default=0)
 
     def __lt__(self, other):
-        if self.matches < other.matches:
+        if self.matches != other.matches:
+            return self.matches < other.matches
+        
+        if self.parent_recipe.rating < other.parent_recipe.rating:
             return True
-        elif self.matches > other.matches:
+        elif self.parent_recipe.rating > other.parent_recipe.rating:
             return False
         else:
-            if self.parent_recipe.rating < other.parent_recipe.rating:
+            if self.parent_recipe.rating_n < other.parent.recipe_n:
                 return True
-            elif self.parent_recipe.rating > other.parent_recipe.rating:
+            elif self.parent_recipe.rating_n < other.parent.recipe_n:
                 return False
             else:
-                if self.parent_recipe.rating_n < other.parent.recipe_n:
-                    return True
-                elif self.parent_recipe.rating_n < other.parent.recipe_n:
-                    return False
-                else:
-                    return self.parent_recipe.name < other.parent_recipe.name
+                return self.parent_recipe.name < other.parent_recipe.name
     
 class User(AbstractBaseUser):
     email = models.EmailField(
