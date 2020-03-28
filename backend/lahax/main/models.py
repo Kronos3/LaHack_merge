@@ -1,8 +1,16 @@
+import django
 import requests
 from bs4 import BeautifulSoup
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Q
 from datetime import datetime
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from .util import powerset
 
 
 class Tag(models.Model):
@@ -132,7 +140,7 @@ class Recipe(models.Model):
 
 """
 from main.script import *
-parse_csv("../RAW_recipes.csv")
+g = Search.start_search(["corn", "butter", "beef"], 'I')
 """
 
 class Search(models.Model):
@@ -149,15 +157,35 @@ class Search(models.Model):
     )
     
     sent = models.IntegerField(default=0)
-    keyword = models.CharField(max_length=256)
-    
+    keywords_cat = models.TextField()
+    powerset_index = models.IntegerField(default=0)
+
     @staticmethod
     def start_search(arguments, search_type='K'):
-        recipes = []
-        s = Search(search_type=search_type, sent=0, keyword=arguments)
+        s = Search(search_type=search_type, sent=0, keywords_cat=",".join(arguments))
         s.save()
-
-        if search_type == 'T':
+        
+        return s
+    
+    @staticmethod
+    def generate_search_query() -> Q:
+        pass
+    
+    def poll(self, n):
+        recipes = []
+        
+        keyword_powerset = list(powerset(self.keywords_cat.split(",")))
+        keyword_powerset.sort(key=len, reverse=True)
+        keyword_powerset = keyword_powerset[:-1]  # Dont do the empty set
+        
+        print(keyword_powerset)
+        
+        while len(recipes) < n:
+            for i, keys in enumerate(keyword_powerset, self.powerset_index):
+                query = Q()
+        
+        """
+        if self.search_type == 'T':
             tags = []
             for x in arguments:
                 tags.extend(Tag.objects.filter(name__iexact=x))
@@ -192,6 +220,7 @@ class Search(models.Model):
         s.save()
         
         return s
+        """
     
 
 class RecipeSearch(models.Model):
@@ -207,15 +236,10 @@ class RecipeSearch(models.Model):
         if self.parent_recipe.rating_n != other.parent_recipe.rating_n:
             return self.parent_recipe.rating_n < other.parent_recipe.rating_n
         return self.parent_recipe.name < other.parent_recipe.name
-    
-class User(AbstractBaseUser):
-    email = models.EmailField(
-        verbose_name='email address',
-        max_length=255,
-        unique=True,
-    )
-    
-    name = models.CharField(max_length=1024)
+
+
+class MetaUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     picture = models.URLField()
     access_token = models.CharField(max_length=64)
     
@@ -227,25 +251,50 @@ class User(AbstractBaseUser):
             recipe_jsons.append(r.get_json())
         
         return {
-            'email': self.email,
-            'name': self.name,
+            'email': self.user.email,
+            'name': "%s %s" % (self.user.first_name, self.user.last_name),
             'picture': self.picture,
             'recipes': recipe_jsons
         }
     
     @staticmethod
-    def get_from_access_token(access_token: str):
+    def from_access_token(access_token: str):
+        r = requests.get('https://www.googleapis.com/oauth2/v1/userinfo?access_token=%s' % access_token)
+        info = r.json()
+        
+        try:
+            found_user = User.objects.get(email__exact=info['email'])
+            return found_user
+        except django.contrib.auth.models.User.DoesNotExist:  # Not found
+            new_user = User(username=info['email'], email=info['email'], first_name=info['given_name'], last_name=info['family_name'])
+
+            new_user.save()
+            
+            new_user.metauser.picture = info['picture']
+            new_user.metauser.access_token = access_token
+            
+            new_user.save()
+    
+            return new_user
+    
+    def update(self, access_token: str):
         r = requests.get('https://www.googleapis.com/oauth2/v1/userinfo?access_token=%s' % access_token)
         
         info = r.json()
         
-        found_user = User.objects.filter(email__exact=info['email'])
-        if len(found_user) != 0:
-            found_user = found_user[0]
-            found_user.access_token = access_token
-            return found_user
-        else:
-            new_user = User(email=info['email'], name=info['name'], picture=info['picture'], access_token=access_token)
-            new_user.save()
-            
-            return new_user
+        self.user.email = info['email']
+        self.user.first_name = info['given_name']
+        self.user.last_name = info['family_name']
+        self.picture = info['picture']
+        self.access_token = access_token
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        MetaUser(user=instance, picture="", access_token="")
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.metauser.save()

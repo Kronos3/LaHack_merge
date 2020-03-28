@@ -6,20 +6,27 @@ from oauth2client.client import OAuth2WebServerFlow
 from django.conf import settings
 import django.views
 
-from .models import User
+from .models import *
 
 
 def get_login(request):
     if 'access_token' not in request.session:
         return HttpResponse('', status=403)
     
-    request.user = User.get_from_access_token(request.session['access_token'])
     return JsonResponse(request.user.get_json())
 
 
-def search_ingredient(request):
-    pass
+def start_search(request, search_type):
+    if request.method != "GET":
+        return HttpResponse(status=400)
+    print(request.GET)
+    search_tokens = request.GET.get('search')
+    
+    return JsonResponse({"search_id": "test"})
 
+def poll_search(request, search_id):
+    if search_id == 'test':
+        return JsonResponse(Recipe.objects.all()[0].get_json())
 
 class BuildFlow:
     def __init__(self):
@@ -53,8 +60,13 @@ class OAuth2CallBack(django.views.View):
 
         credentials_js = json.loads(credentials.to_json())
         access_token = credentials_js['access_token']
+        
         # Store the access token in case we need it again!
         request.session['access_token'] = access_token
+        request.user = MetaUser.from_access_token(access_token)
+        
+        print("Successful login for %s" % request.user)
+        
         return HttpResponseRedirect("/")
 
     @staticmethod

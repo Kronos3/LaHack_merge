@@ -6,18 +6,16 @@ import org.json.simple.JSONObject;
 import java.util.ArrayList;
 
 public class User {
-    private String email;
-    private String name;
 
-    private String picture;
     private ArrayList<Recipe> recipes;
 
     public static User getCurrentUser(Interface parent) {
         JSONObject res = parent.getRequest("login-meta");
 
-        return new User(res);
+        //return new User(res);
+        return null;
     }
-
+/**
     public User (JSONObject obj) {
         this.email = (String)obj.get("email");
         this.name = (String)obj.get("name");
@@ -52,4 +50,5 @@ public class User {
     public ArrayList<Recipe> getRecipes() {
         return recipes;
     }
+ */
 }

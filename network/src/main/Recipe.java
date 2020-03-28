@@ -3,6 +3,8 @@ package main;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -41,7 +43,14 @@ public class Recipe extends Requestable {
         this.minutes = (int)Integer.parseInt((String)this.get_obj().get("minutes"));
         this.contributor_id = (String)this.get_obj().get("contributor_id");
         this.imageUrl = (String)this.get_obj().get("imageUrl");
-        this.submitted = new Date(Long.parseLong((String)this.get_obj().get("submitted")));
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            this.submitted = dateFormat.parse((String) this.get_obj().get("submitted"));
+        }
+        catch (ParseException e) {
+            e.printStackTrace();
+        }
 
         JSONArray ingredients = (JSONArray)this.get_obj().get("ingredients");
         JSONArray tags = (JSONArray)this.get_obj().get("tags");

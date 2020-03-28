@@ -55,14 +55,14 @@ public class Interface {
         return null;
     }
 
-    public JSONObject postRequest(String api_call, JSONObject post) {
-        String url_str = String.format("%s/api/%s", this.server_address, api_call);
+    public JSONObject postRequest(String api_call, String query_string) {
+        String url_str = String.format("%s/api/%s/?%s", this.server_address, api_call, query_string);
 
         try {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url_str))
-                    .POST(HttpRequest.BodyPublishers.ofString(post.toJSONString()))
+                    .GET()
                     .build();
 
             HttpResponse<String> response = client.send(request,
@@ -113,16 +113,10 @@ public class Interface {
      * Search for recipes given an ingredient
      * @return a pollable object with nothing initially polled
      */
-    public Search searchIngredients(ArrayList<Ingredient> ing) {
-        JSONArray arr = new JSONArray();
-        for (Ingredient i : ing) {
-            arr.add(i.get_obj());
-        }
+    public Search search(ArrayList<String> toks) {
 
-        JSONObject post_data = new JSONObject();
-        post_data.put("search", arr);
 
-        JSONObject response = this.postRequest("search/i", post_data);
+        JSONObject response = this.postRequest("search/start/i", "search=a,c,b,d");
 
         assert response != null;
         return new Search(this, (String)response.get("search_id"));

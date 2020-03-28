@@ -18,7 +18,11 @@ public class Search extends Pollable<Search, Recipe> {
     }
 
     public static Recipe recv(Search parent) {
-        JSONObject obj = parent.i.getRequest(String.format("search/poll/%s", parent.searchId));
+        JSONObject obj = parent.i.getRequest(String.format("search/poll/%s/", parent.searchId));
         return new Recipe(obj);
+    }
+
+    public int poll(int n) {
+        return super.poll(this, n);
     }
 }
