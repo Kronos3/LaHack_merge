@@ -154,35 +154,37 @@ class Search(models.Model):
     @staticmethod
     def start_search(arguments, search_type='K'):
         recipes = []
-        found = []
-        s = Search(search_type=search_type, sent=0,keyword=arguments)
+        s = Search(search_type=search_type, sent=0, keyword=arguments)
         s.save()
 
-        if(search_type == 'T'):
+        if search_type == 'T':
             tags = []
             for x in arguments:
                 tags.extend(Tag.objects.filter(name__icontains=x))
             for t in tags:
                 recipes.append(t.recipe_set.all())           
-        elif (search_type == 'I'):
+        elif search_type == 'I':
             ingredients = []
             for x in arguments:
                 ingredients.extend(Ingredient.objects.filter(name__icontains=x))
             for i in ingredients:
                 recipes.append(i.recipe_set.all())
         else:
-            keywords = arguments
-            for x in keywords:
-                recipes.append(x.recipe_set.all())
+            for x in arguments:
+                recipes.append(Recipe.objects.filter(name__icontains=x))
 
         for sets in recipes:
             for r in sets:
                 temp = RecipeSearch.objects.filter(parent_search=s, parent_recipe=r)
                 if len(temp) == 0:
-                    RecipeSearch(parent_search=s, parent_recipe=r, matches=1)
+                    searched = RecipeSearch(parent_search=s, parent_recipe=r, matches=1)
+                    searched.save()
                 else:
                     temp[0].matches += 1
-
+                    temp[0].save()
+        
+        s.save()
+        
         return s
 
 class RecipeSearch(models.Model):
