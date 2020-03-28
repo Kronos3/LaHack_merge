@@ -1,12 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimary">
+    </androidx.appcompat.widget.Toolbar>
+
+    <com.miguelcatalan.materialsearchview.MaterialSearchView
+        android:id="@+id/search_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:searchBackground="@color/colorPrimary"
+        app:searchSuggestionBackground="@color/colorPrimary"
+        app:searchCloseIcon="@drawable/ic_action_navigation_close_inverted"
+        app:searchBackIcon="@drawable/ic_action_navigation_arrow_back_inverted"
+        app:searchSuggestionIcon="@drawable/ic_suggestion"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#FFFFFF">
+
+    </com.miguelcatalan.materialsearchview.MaterialSearchView>
+
     <androidx.recyclerview.widget.RecyclerView
+        android:layout_below="@+id/toolbar"
         android:id="@+id/recipeRV"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -14,4 +36,4 @@
     </androidx.recyclerview.widget.RecyclerView>
 
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>

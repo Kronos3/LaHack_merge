@@ -30,6 +30,11 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
         this.c = c;
     }
 
+    public void setRecipeList(Recipe[] newRcp){
+        this.recipeList = newRcp;
+
+    }
+
     @Override
     public int getItemCount() {
         return recipeList.length;
@@ -37,20 +42,26 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
 
     @Override
     public void onBindViewHolder(recyclerViewHolder p, int i) {
-        p.recipeName.setText(recipeList[i].getName());
-        ArrayList<String> ingredientAL = new ArrayList<>();
+
+        if(recipeList[i] != null){
+            p.recipeName.setText(recipeList[i].getName());
+            ArrayList<String> ingredientAL = new ArrayList<>();
 
 
-        Log.d("length ", ""+recipeList[i].getIngredients().length);
-        for (int j = 0; j < recipeList[i].getIngredients().length; j++) {
-            ingredientAL.add(recipeList[i].getIngredients()[j]);
+
+            Log.d("length ", ""+recipeList[i].getIngredients().length);
+            for (int j = 0; j < recipeList[i].getIngredients().length; j++) {
+                ingredientAL.add(recipeList[i].getIngredients()[j]);
+            }
+            Log.d("array ", ""+ Arrays.toString(recipeList[i].getIngredients()));
+
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(c, android.R.layout.simple_list_item_1, ingredientAL);
+            p.recipeIngredients.setAdapter(adapter);
+
+            p.recipeImage.setBackgroundResource(R.drawable.ic_launcher_background);
+
         }
-        Log.d("array ", ""+ Arrays.toString(recipeList[i].getIngredients()));
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(c, android.R.layout.simple_list_item_1, ingredientAL);
-        p.recipeIngredients.setAdapter(adapter);
-
-        p.recipeImage.setBackgroundResource(R.drawable.ic_launcher_background);
 
 
     }
