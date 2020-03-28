@@ -20,23 +20,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
+
 public class MainActivity extends AppCompatActivity {
     private RecyclerView recipeRV;
     private LinearLayoutManager rLayoutManager;
     private recyclerAdapter rAdapter;
     private Toolbar toolbar;
     private MaterialSearchView searchView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
 
-        Recipe r1 = new Recipe("Sandwich", new String[]{"Ing 1", "Ing 2", "Ing 3", "Ing4"});
-        Recipe r2 = new Recipe("Fried Chicken", new String[]{"Ing 1", "Ing 2", "Ing 3"});
-        Recipe r3 = new Recipe("Fried Fish", new String[]{"Ing 1", "Ing 2", "Ing 3"});
-        Recipe r4 = new Recipe("Broccoli", new String[]{"Ing 1", "Ing 2", "Ing 3"});
-        Recipe r5 = new Recipe("Mushroom Soup", new String[]{"Ing 1", "Ing 2", "Ing 3"});
+        Recipe r1 = new Recipe("Sandwich", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
+        Recipe r2 = new Recipe("Fried Chicken", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"),new Ingredient("Ing 1")});
+        Recipe r3 = new Recipe("Fried Butter", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"),new Ingredient("Ing 1")});
+        Recipe r4 = new Recipe("Pizza", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"),new Ingredient("Ing 1")});
+        Recipe r5 = new Recipe("Mushroom stew", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"),new Ingredient("Ing 1")});
 
         final Recipe[] rlist = {r1, r2, r3, r4, r5};
 
@@ -66,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSearchViewClosed() {
 
-                recyclerAdapter rvAdapter = new recyclerAdapter(rlist,MainActivity.this);
+                recyclerAdapter rvAdapter = new recyclerAdapter(rlist, MainActivity.this);
                 recipeRV.setAdapter(rvAdapter);
                 recipeRV.invalidate();
 
@@ -82,39 +85,35 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextChange(String newText) {
 
-                if(newText != null && !newText.isEmpty()){
+                if (newText != null && !newText.isEmpty()) {
                     Log.d("im here", "yoooo");
                     //Log.d("im here", "im here!!!!");
 
 
                     ArrayList<Recipe> listFoundTemp = new ArrayList<>();
-                    for(Recipe item: rlist){
-                        Log.d("im here", ""+Arrays.toString(rlist));
-                        Log.d("im here", ""+item);
+                    for (Recipe item : rlist) {
+                        Log.d("im here", "" + Arrays.toString(rlist));
+                        Log.d("im here", "" + item);
 
-                        if(item.getName().toLowerCase().contains(newText.toLowerCase())){
+                        if (item.getName().toLowerCase().contains(newText.toLowerCase())) {
                             listFoundTemp.add(item);
 
                         }
                     }
 
                     Recipe[] listFound = new Recipe[listFoundTemp.size()];
-                    for(int i = 0; i < listFound.length; i++){
+                    for (int i = 0; i < listFound.length; i++) {
                         listFound[i] = listFoundTemp.get(i);
                     }
 
 
-
-
-
                     recipeRV.invalidate();
-                    recyclerAdapter rvAdapter = new recyclerAdapter(listFound,MainActivity.this);
+                    recyclerAdapter rvAdapter = new recyclerAdapter(listFound, MainActivity.this);
                     recipeRV.setAdapter(rvAdapter);
 
 
-                }
-                else{
-                    recyclerAdapter rvAdapter = new recyclerAdapter(rlist,MainActivity.this);
+                } else {
+                    recyclerAdapter rvAdapter = new recyclerAdapter(rlist, MainActivity.this);
                     recipeRV.setAdapter(rvAdapter);
                     recipeRV.invalidate();
                 }

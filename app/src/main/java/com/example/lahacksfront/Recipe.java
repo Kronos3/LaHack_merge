@@ -4,9 +4,9 @@ import java.util.ArrayList;
 
 public class Recipe {
     private String name;
-    private String[] ingredients;
+    private Ingredient[] ingredients;
 
-    public Recipe(String n, String[] i){
+    public Recipe(String n, Ingredient[] i){
         name = n;
         ingredients = i;
     }
@@ -15,7 +15,7 @@ public class Recipe {
         return name;
     }
 
-    public String[] getIngredients() {
+    public Ingredient[] getIngredients() {
         return ingredients;
     }
 

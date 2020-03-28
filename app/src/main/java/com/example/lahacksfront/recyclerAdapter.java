@@ -30,7 +30,7 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
         this.c = c;
     }
 
-    public void setRecipeList(Recipe[] newRcp){
+    public void setRecipeList(Recipe[] newRcp) {
         this.recipeList = newRcp;
 
     }
@@ -43,25 +43,34 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
     @Override
     public void onBindViewHolder(recyclerViewHolder p, int i) {
 
-        if(recipeList[i] != null){
+        if (recipeList[i] != null) {
             p.recipeName.setText(recipeList[i].getName());
             ArrayList<String> ingredientAL = new ArrayList<>();
 
 
-
-            Log.d("length ", ""+recipeList[i].getIngredients().length);
-            for (int j = 0; j < recipeList[i].getIngredients().length; j++) {
-                ingredientAL.add(recipeList[i].getIngredients()[j]);
+            Log.d("length ", "" + recipeList[i].getIngredients().length);
+            if(recipeList[i].getIngredients().length<= 3){
+                for (int j = 0; j < recipeList[i].getIngredients().length; j++) {
+                    ingredientAL.add(recipeList[i].getIngredients()[j].getName());
+                }
             }
-            Log.d("array ", ""+ Arrays.toString(recipeList[i].getIngredients()));
+            else{
+                for (int j = 0; j < 3; j++) {
+                    ingredientAL.add(recipeList[i].getIngredients()[j].getName());
+                    if(j == 2){
+                        ingredientAL.add("...Click for more");
+                    }
+                }
+            }
 
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(c, android.R.layout.simple_list_item_1, ingredientAL);
+            Log.d("array ", "" + Arrays.toString(recipeList[i].getIngredients()));
+
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(c, R.layout.small_list_view_text, ingredientAL);
             p.recipeIngredients.setAdapter(adapter);
 
             p.recipeImage.setBackgroundResource(R.drawable.ic_launcher_background);
 
         }
-
 
 
     }

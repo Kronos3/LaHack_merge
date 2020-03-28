@@ -8,7 +8,7 @@
         android1:orderInCategory="100"
         android1:title="Search ..."
         android:showAsAction="always"
-        android1:icon="@drawable/ic_search_black_24dp"
+        android1:icon="@drawable/ic_search_white_24dp"
 
         />
 
