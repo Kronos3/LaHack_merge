@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -121,16 +122,12 @@ public class NetworkUtils {
         for (int i = 0; i < images.size(); i++) {
             String name = String.format("image%d", i);
 
-            File f = new File(name);
-            OutputStream outStream = null;
-            try {
-                outStream = new FileOutputStream(f);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            images.get(i).compress(Bitmap.CompressFormat.PNG, 90, stream);
 
-            images.get(i).compress(Bitmap.CompressFormat.PNG, 90, outStream);
-            requestBodyBuilder.addFormDataPart("file", name, RequestBody.create(MediaType.parse("image/png"), f));
+            byte[] byteArray = stream.toByteArray();
+
+            requestBodyBuilder.addFormDataPart("file", name, RequestBody.create(MediaType.parse("image/png"), byteArray));
         }
 
         RequestBody requestBody = requestBodyBuilder.build();
