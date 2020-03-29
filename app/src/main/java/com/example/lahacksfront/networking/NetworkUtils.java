@@ -116,7 +116,7 @@ public class NetworkUtils {
         return (String) returnObject;
     }
 
-    public String upload_file(ArrayList<Bitmap> images) {
+    private String upload_file(ArrayList<Bitmap> images, String url) {
         MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
 
         for (int i = 0; i < images.size(); i++) {
@@ -132,7 +132,7 @@ public class NetworkUtils {
 
         RequestBody requestBody = requestBodyBuilder.build();
 
-        Request request = new Request.Builder().url(url + "process/start/")
+        Request request = new Request.Builder().url(url)
                 .post(requestBody).build();
 
         sendRawRequest(request, new Callback() {
@@ -151,6 +151,14 @@ public class NetworkUtils {
         });
 
         return (String)returnObject;
+    }
+
+    public String upload_file_text(ArrayList<Bitmap> images) {
+        return this.upload_file(images, url + "process/start_text/");
+    }
+
+    public String upload_file_obj(ArrayList<Bitmap> images) {
+        return this.upload_file(images, url + "process/start_obj/");
     }
 
     public ArrayList<Recipe> userRecipes_add(String recipe_id) {
