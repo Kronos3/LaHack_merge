@@ -1,3 +1,5 @@
+import re
+import secrets
 from typing import Union, List
 import io
 
@@ -21,6 +23,16 @@ import os
 from django.db.models.functions import Length
 import pandas as pd
 
+from nltk.corpus import wordnet as wn
+
+
+def get_word_types(tok):
+    syn = wn.synset(tok)
+    return list(set([w for s in syn.closure(lambda s: s.hyponyms()) for w in s.lemma_names()]))
+
+foods = get_word_types('food.n.02')
+colors = get_word_types('chromatic_color.n.01')
+
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'../client_secret.json'
 
 client = vision.ImageAnnotatorClient()
@@ -32,7 +44,6 @@ class Tag(models.Model):
         tags = Tag.objects.filter(name__exact=name)
         if len(tags) == 0:
             t = Tag(name=name)
-            print(name)
             t.save()
             return t
         
@@ -75,7 +86,6 @@ class Recipe(models.Model):
         # name,id,minutes,contributor_id,submitted,tags,nutrition,n_steps,steps,description,ingredients,n_ingredients
         
         name, _id, _min, contrib, submit, tags, nut, n_steps, steps, desc, ing, n_ing = row
-        print(name, _id)
         submit = datetime.strptime(submit, "%Y-%m-%d")
         
         r = Recipe(name=name,
@@ -166,6 +176,8 @@ class Search(models.Model):
         default='K',
     )
     
+    MAX_SEARCH_TOKS = 10
+    
     sent = models.IntegerField(default=0)
     keywords_cat = models.TextField()
     powerset_index = models.IntegerField(default=0)
@@ -205,7 +217,7 @@ class Search(models.Model):
         keywords = self.keywords_cat.split(",")
         keyword_powerset = powerset_length_split(keywords)
         if self.powerset_size_index == 0:
-            self.powerset_size_index = len(keywords)
+            self.powerset_size_index = min(len(keywords), self.MAX_SEARCH_TOKS)
         
         old_total = self.total_added + n
         
@@ -225,14 +237,14 @@ class Search(models.Model):
                 query |= query_subset
                 self.powerset_index += 1
             
-            print(query)
-            
-            found_from_query = Recipe.objects.filter(query).order_by('-rating_n', '-rating', 'name')
-            print(found_from_query)
+            found_from_query = Recipe.objects.filter(query).distinct().order_by('-rating_n', '-rating', 'name')
             
             for recipe in found_from_query[0:100]:
-                add = SearchRecipe(recipe=recipe, search=self, priority=self.total_added)
-                add.save()
+                try:
+                    SearchRecipe.objects.get(recipe=recipe, search=self)
+                except SearchRecipe.DoesNotExist:
+                    add = SearchRecipe(recipe=recipe, search=self, priority=self.total_added)
+                    add.save()
                 
                 self.total_added += 1
 
@@ -352,15 +364,22 @@ class ImageProcess(models.Model):
         texts = response.text_annotations
         
         df = pd.DataFrame(columns=['locale', 'description'])
-        
         for text in texts:
+            
             df = df.append(
                 dict(locale=text.locale,
                      description=text.description),
                 ignore_index=True
             )
         
-        return df
+        toks = re.split(r"(;|,|\s| |\n)", df['description'].values[0])
+        out_toks = []
+        
+        for tok in toks:
+            if tok.isalnum() and 'date' not in tok.lower():
+                out_toks.append(tok.lower())
+        
+        return out_toks
     
     def process(self) -> List[str]:
         out = []
@@ -368,11 +387,14 @@ class ImageProcess(models.Model):
         for path in self.image_set.all():
             text = ImageProcess.detect_text(path.filepath)
             for token in text:
-                matching_ingredients = Ingredient.objects.filter(name__icontains=token).order_by(Length('name').asc())
+                if token not in foods or token in out or token in colors:
+                    continue
+                
+                matching_ingredients = Ingredient.objects.filter(name__icontains=" %s " % token).order_by(Length('name').asc())
                 if len(matching_ingredients) != 0:
-                    out.append(*matching_ingredients)
-            print(text)
+                    out.append(token)
         
+        print("Searching for %s" % ", ".join(out))
         return out
 
 
@@ -381,3 +403,54 @@ class Image(models.Model):
     date_created = models.DateTimeField(auto_now=True)
     
     parent_process = models.ForeignKey(ImageProcess, on_delete=models.CASCADE)
+
+
+class RecipeUser(models.Model):
+    added_recipes = models.ManyToManyField(Recipe)
+    user_token = models.CharField(max_length=16)
+    
+    @staticmethod
+    def new_from_token(token):
+        ru = RecipeUser(user_token=token)
+        ru.save()
+        
+        return ru
+    
+    @staticmethod
+    def new_token():
+        while True:
+            current_tok = secrets.token_urlsafe(16)
+            try:
+                RecipeUser.objects.get(user_token=current_tok)
+            except RecipeUser.DoesNotExist:
+                return current_tok
+    
+    def add_recipe(self, recipe_id):
+        try:
+            self.added_recipes.get(recipe_id=recipe_id)
+        except:
+            pass
+        else:
+            return
+        
+        try:
+            
+            self.added_recipes.add(Recipe.objects.get(recipe_id=recipe_id))
+            self.save()
+        except Recipe.DoesNotExist:
+            print("Recipe with id '%s' does not exist" % recipe_id)
+    
+    def remove_recipe(self, recipe_id):
+        try:
+            self.added_recipes.remove(self.added_recipes.get(recipe_id=recipe_id))
+            self.save()
+        except:
+            print("Recipe with id '%s' does not exist" % recipe_id)
+    
+    def get_json(self):
+        out = []
+        
+        for recipe in self.added_recipes.all():
+            out.append(recipe.get_json())
+        
+        return out

@@ -123,3 +123,35 @@ def image_process(request):
         return JsonResponse({'process_id': img_p.id})
     
     return render(request, 'upload.html')
+
+
+def user_data(request):
+    if request.method != 'GET':
+        return HttpResponse(status=400)
+    
+    user_token = request.GET.get('user_token')
+    action = request.GET.get('action')
+    print(request.GET)
+    user = None
+    try:
+        user = RecipeUser.objects.get(user_token=user_token)
+    except RecipeUser.DoesNotExist:
+        user = RecipeUser.new_from_token(user_token)
+
+    if action == "get":  # No editing is needed
+        pass
+    elif action == "add":
+        recipe_id = request.GET.get('recipe_id')
+        user.add_recipe(recipe_id)
+    elif action == "remove":
+        recipe_id = request.GET.get('recipe_id')
+        user.remove_recipe(recipe_id)
+    
+    return JsonResponse(user.get_json(), safe=False)
+
+
+def request_token(request):
+    if request.method != 'GET':
+        return HttpResponse(status=400)
+    
+    return HttpResponse(content=RecipeUser.new_token())
