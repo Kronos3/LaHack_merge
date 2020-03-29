@@ -14,10 +14,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.example.lahacksfront.networking.NetworkUtils;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 public class SavedRecipes extends AppCompatActivity {
 
@@ -25,6 +27,8 @@ public class SavedRecipes extends AppCompatActivity {
     private FloatingActionButton fabCamera;
     private FloatingActionButton fabManual;
     private FloatingActionButton fabGallery;
+    private NetworkUtils nu;
+    private String searchId;
 
     private ImageView cameraImg;
 
@@ -32,6 +36,9 @@ public class SavedRecipes extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        nu = new NetworkUtils();
+
         setContentView(R.layout.activity_saved_recipes);
 
         fab = findViewById(R.id.fab);
@@ -133,12 +140,19 @@ public class SavedRecipes extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+
+        ArrayList<Bitmap> bitmaps = new ArrayList<>();
+
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode){
             case 12345:
                 if(resultCode == RESULT_OK){
                     Bitmap bitmap = (Bitmap)data.getExtras().get("data");
                     Log.d("bitmap", "123"+bitmap.toString());
+                    bitmaps.add(bitmap);
+
+                    searchId = nu.start_process(nu.upload_file(bitmaps));
+                    Log.d("bitmap", searchId);
 
                 }
 
@@ -153,7 +167,12 @@ public class SavedRecipes extends AppCompatActivity {
                     }
                     final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
 
-                    Log.d("bitmap", "123"+selectedImage.toString());
+                    Log.d("bitmap", "Gallery"+selectedImage.toString());
+
+                    bitmaps.add(selectedImage);
+
+                    searchId = nu.start_process(nu.upload_file(bitmaps));
+                    Log.d("bitmap", searchId);
                     /* Now you have choosen image in Bitmap format in object "yourSelectedImage". You can use it in way you want! */
                 }
 
