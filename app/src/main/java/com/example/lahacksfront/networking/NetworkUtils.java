@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -29,18 +30,24 @@ public class NetworkUtils {
 
     private Object returnObject;
     private Semaphore locker;
+    private Gson gson;
 
     public NetworkUtils () {
         client = new OkHttpClient();
         url = "https://ingredible.tech/api/";
         locker = new Semaphore(1);
+        gson = new Gson();
     }
 
     private void sendRequest(String url, Callback callback) {
         Request request = new Request.Builder()
-                //Temporary Test
                 .url(url)
                 .build();
+
+        sendRawRequest(request, callback);
+    }
+
+    private void sendRawRequest(Request request, Callback callback) {
 
         try {
             locker.acquire();
@@ -59,9 +66,24 @@ public class NetworkUtils {
     }
 
     public ArrayList<Recipe> userRecipes() {
-        ArrayList<Recipe> out = new ArrayList<>();
+        String user_token = "user";
 
-        return out;
+        sendRequest(url + "user_data/?user_token=" + user_token, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {}
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Recipe[] recipes = gson.fromJson(response.body().string(), Recipe[].class);
+                    returnObject = new ArrayList<>(Arrays.asList(recipes));
+
+                    locker.release();
+                }
+            }
+        });
+
+        return (ArrayList<Recipe>)returnObject;
     }
 
     public String searchId(String query) throws IOException {
@@ -96,17 +118,12 @@ public class NetworkUtils {
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    returnObject = parseRecipeJson(response.body().string());
+                    returnObject = gson.fromJson(response.body().string(), Recipe.class);
                     locker.release();
                 }
             }
         });
 
         return (Recipe) returnObject;
-    }
-
-    private static Recipe parseRecipeJson(String json) {
-        Gson gson = new Gson();
-        return gson.fromJson(json, Recipe.class);
     }
 }
