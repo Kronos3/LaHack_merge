@@ -75,18 +75,17 @@ public class MainActivity extends AppCompatActivity {
 
                     for (int i = 0; i < 15; i++) {
                         Log.d("test1", id);
-                        nu.getRecipes(id, a, i);
+                        a[i] = nu.getRecipe(id);
 
 
                     }
-                    Thread.sleep(1000);
+                   
                     Log.d("recipes", Arrays.toString(a));
 
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             rAdapter.setRecipeList(a);
-                            recipeRV.invalidate();
 
                         }
                     });
@@ -101,8 +100,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         thread.start();
-
-
 
 
         //Temporary Code

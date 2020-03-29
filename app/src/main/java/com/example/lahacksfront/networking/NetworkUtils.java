@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -21,20 +22,18 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class NetworkUtils {
-
     private Activity con;
-    private OkHttpClient client = new OkHttpClient();
-    private String url = "https://ingredible.tech/api/";
+    private OkHttpClient client;
+    private String url;
 
-
-    private String searchedValue;
     private Recipe returnedRecipe;
+    private Semaphore locker;
 
-
-    public Recipe getReturnedRecipe() {
-        return returnedRecipe;
+    public NetworkUtils () {
+        client = new OkHttpClient();
+        url = "https://ingredible.tech/api/";
+        locker = new Semaphore(1);
     }
-
 
     public String searchId(String query) throws IOException {
         Log.d("query", "called Search Function");
@@ -65,18 +64,20 @@ public class NetworkUtils {
 //
 //
 //        });
-
-
     }
 
-    public void getRecipes(String id, Recipe[] recipes, int index) {
+    public Recipe getRecipe(String search_id) {
 
         Request request = new Request.Builder()
                 //Temporary Test
-                .url(url + "search/poll/" + id + "/?")
+                .url(String.format("%ssearch/poll/%s/", this.url, search_id))
                 .build();
 
-        final Recipe[] myResponse = new Recipe[1];
+        try {
+            locker.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -87,29 +88,26 @@ public class NetworkUtils {
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.isSuccessful()) {
-
                     Log.d("here", "getRecipeOnReponse");
-                    String r = response.body().string();
-                    Log.d("response", r);
-                    // Log.d("here", "" + parseRecipeJson(response.body().string().toString()));
-                    // returnedRecipe = parseRecipeJson(response.body().string());
-                    recipes[index] = parseRecipeJson(r);
-
+                    returnedRecipe = parseRecipeJson(response.body().string());
+                    locker.release();
                 }
             }
-
-
         });
 
-        //return myResponse[0];
+        try {
+            locker.acquire();
+            locker.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
+        return returnedRecipe;
     }
 
-    public Recipe parseRecipeJson(String json) {
+    private static Recipe parseRecipeJson(String json) {
         Gson gson = new Gson();
-        Recipe entity = gson.fromJson(json, Recipe.class);
-
-        return entity;
+        return gson.fromJson(json, Recipe.class);
 
     }
 }
