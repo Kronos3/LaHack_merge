@@ -28,6 +28,7 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
     private Recipe[] recipeList;
     private Context c;
 
+
     public recyclerAdapter(Recipe[] recipeList, Context c) {
 
         this.recipeList = recipeList;
@@ -101,8 +102,12 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
 
             //Set Recipe Image
             String url = recipeList[i].getImage();
-            if (url != null) {
+            if (url != null && url.length()>0) {
                 Picasso.get().load(url).into(p.recipeImage);
+            }
+            else{
+                p.recipeImage.setImageResource(R.drawable.ic_cloud_off_black_24dp);
+
             }
 
 
@@ -138,6 +143,7 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
                 from(viewGroup.getContext()).
                 inflate(R.layout.recipe_card, viewGroup, false);
         itemView.invalidate();
+
 
         itemView.setOnClickListener(new View.OnClickListener() {
             @Override

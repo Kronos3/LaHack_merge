@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private recyclerAdapter rAdapter;
     private Toolbar toolbar;
     private MaterialSearchView searchView;
+    private String query;
     private NetworkUtils networkUtils;
 
 
@@ -55,8 +57,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         NetworkUtils nu = new NetworkUtils();
 
-        final Recipe[] a = new Recipe[15];
+        //ManualQuery
+        Intent manualIntent =  getIntent();
+        query = manualIntent.getStringExtra("queryManual");
+        Log.d("query", query);
 
+
+
+        final Recipe[] a = new Recipe[10];
 
         //Assign all views
         recipeRV = findViewById(R.id.recipeRV);
@@ -70,26 +78,25 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 try {
                     //Log.d("test", nu.searchId("beans"));
-                    String id = nu.searchId("apple");
+                    String id = nu.searchId(query);
                     id = id.substring(id.indexOf(" ") + 1, id.length() - 1);
 
-                    for (int i = 0; i < 15; i++) {
+                    for (int i = 0; i < 10; i++) {
                         Log.d("test1", id);
                         a[i] = nu.getRecipe(id);
 
-
                     }
-                   
+
                     Log.d("recipes", Arrays.toString(a));
 
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             rAdapter.setRecipeList(a);
+                            recipeRV.setVisibility(View.VISIBLE);
 
                         }
                     });
-
 
                 } catch (Exception e) {
                     e.printStackTrace();

@@ -28,6 +28,7 @@
     </com.miguelcatalan.materialsearchview.MaterialSearchView>
 
     <androidx.recyclerview.widget.RecyclerView
+        android:visibility="invisible"
         android:layout_below="@+id/toolbar"
         android:id="@+id/recipeRV"
         android:layout_width="match_parent"
