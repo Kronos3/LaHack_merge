@@ -32,6 +32,7 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
 
     public void setRecipeList(Recipe[] newRcp) {
         this.recipeList = newRcp;
+        notifyDataSetChanged();
 
     }
 
@@ -41,36 +42,84 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
     }
 
     @Override
-    public void onBindViewHolder(recyclerViewHolder p, int i) {
+    public void onBindViewHolder(final recyclerViewHolder p, int i) {
 
         if (recipeList[i] != null) {
+            //Set Recipe Name
             p.recipeName.setText(recipeList[i].getName());
+
+            //Add Ingredients
             ArrayList<String> ingredientAL = new ArrayList<>();
-
-
-            Log.d("length ", "" + recipeList[i].getIngredients().length);
-            if(recipeList[i].getIngredients().length<= 3){
-                for (int j = 0; j < recipeList[i].getIngredients().length; j++) {
-                    ingredientAL.add(recipeList[i].getIngredients()[j].getName());
-                }
-            }
-            else{
-                for (int j = 0; j < 3; j++) {
-                    ingredientAL.add(recipeList[i].getIngredients()[j].getName());
-                    if(j == 2){
-                        ingredientAL.add("...Click for more");
-                    }
-                }
+            for (int j = 0; j < recipeList[i].getIngredients().length; j++) {
+                ingredientAL.add(recipeList[i].getIngredients()[j].getName());
             }
 
-            Log.d("array ", "" + Arrays.toString(recipeList[i].getIngredients()));
+            Log.d("Printed Array", "" + ingredientAL.toString());
 
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(c, R.layout.small_list_view_text, ingredientAL);
-            p.recipeIngredients.setAdapter(adapter);
+            //Don't want to display more than 3 ingredients, show click for more...
+            //Old code to handle list view
+//            if(recipeList[i].getIngredients().length<= 3){
+//                for (int j = 0; j < recipeList[i].getIngredients().length; j++) {
+//                    ingredientAL.add(recipeList[i].getIngredients()[j].getName());
+//                }
+//            }
+//            else{
+//                for (int j = 0; j < 3; j++) {
+//                    ingredientAL.add(recipeList[i].getIngredients()[j].getName());
+//                    if(j == 2){
+//                        ingredientAL.add("...Click for more");
+//                    }
+//                }
+//            }
+//
+//            ArrayAdapter<String> adapter = new ArrayAdapter<String>(c, R.layout.small_list_view_text, ingredientAL);
+//            p.recipeIngredients.setAdapter(adapter);
 
+            String ings = "";
+            for (int h = 0; h < recipeList[i].getIngredients().length; h++) {
+                String n = recipeList[i].getIngredients()[h].getName();
+                if (h != recipeList[i].getIngredients().length - 1) {
+                    ings += n + ", ";
+                } else {
+                    ings += n;
+                }
+
+
+            }
+
+
+            if (ings.length() < 135) {
+                p.recipeIngredients.setText(ings);
+            } else {
+                p.recipeIngredients.setText(ings.substring(0, 135) + " ...");
+            }
+
+
+            //Set Recipe Image
             p.recipeImage.setBackgroundResource(R.drawable.ic_launcher_background);
 
         }
+
+
+        //Bookmark Logic
+        p.bookmark.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                switch (p.bookmark.getTag().toString()) {
+                    case "" + R.drawable.ic_bookmark_blank_24dp:
+                        p.bookmark.setImageResource(R.drawable.ic_bookmark_black_24dp);
+                        p.bookmark.setTag(R.drawable.ic_bookmark_black_24dp);
+                        break;
+                    case "" + R.drawable.ic_bookmark_black_24dp:
+                    default:
+                        p.bookmark.setImageResource(R.drawable.ic_bookmark_blank_24dp);
+                        p.bookmark.setTag(R.drawable.ic_bookmark_blank_24dp);
+                        break;
+                }
+
+            }
+        });
 
 
     }
@@ -88,7 +137,8 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
 
         protected TextView recipeName;
         protected ImageView recipeImage;
-        protected ListView recipeIngredients;
+        protected TextView recipeIngredients;
+        protected ImageView bookmark;
 
         public recyclerViewHolder(View v) {
             super(v);
@@ -96,6 +146,8 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
             recipeName = v.findViewById(R.id.recipeName);
             recipeImage = v.findViewById(R.id.recipeImage);
             recipeIngredients = v.findViewById(R.id.recipeIngredients);
+            bookmark = v.findViewById(R.id.bookmark);
+            bookmark.setTag(R.drawable.ic_bookmark_blank_24dp);
 
 
         }

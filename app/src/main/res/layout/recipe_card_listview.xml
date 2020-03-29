@@ -35,15 +35,15 @@
             android:text="DefaulName">
         </TextView>
 
-        <TextView
-            android:id="@+id/recipeIngredients"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_toLeftOf="@+id/userButtons"
+        <com.example.lahacksfront.customListView
+            android:id="@+id/recipeIngredientsList"
             android:layout_toRightOf="@+id/recipeImage"
-            android:layout_below="@+id/recipeName">
+            android:layout_below="@+id/recipeName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/userButtons">
 
-        </TextView>
+        </com.example.lahacksfront.customListView>
 
         <LinearLayout
             android:id="@+id/userButtons"

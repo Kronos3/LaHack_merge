@@ -5,61 +5,120 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.Activity;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
 
 import androidx.appcompat.widget.Toolbar;
 
+import com.example.lahacksfront.networking.NetworkUtils;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.miguelcatalan.materialsearchview.MaterialSearchView;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import static org.awaitility.Awaitility.await;
 
 
 public class MainActivity extends AppCompatActivity {
+
+    //Views
     private RecyclerView recipeRV;
     private LinearLayoutManager rLayoutManager;
     private recyclerAdapter rAdapter;
     private Toolbar toolbar;
     private MaterialSearchView searchView;
+    private NetworkUtils networkUtils;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        NetworkUtils nu = new NetworkUtils();
+
+        final Recipe[] a = new Recipe[5];
+
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try  {
+                    Log.d("test", nu.searchId("beans"));
+                    String id = nu.searchId("beans");
+                    Thread.sleep(200);
+                    
+                    for(int i = 0; i< 5; i++){
+                        Log.d("test1", id);
+                        nu.getRecipes(id, a, i);
+
+                    }
+                    Thread.sleep(1000);
+                    Log.d("recipes", Arrays.toString(a));
+
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            rAdapter.setRecipeList(a);
+                        }
+                    });
 
 
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+
+
+
+        //Assign all views
+        recipeRV = findViewById(R.id.recipeRV);
+        toolbar = findViewById(R.id.toolbar);
+        searchView = findViewById(R.id.search_view);
+
+
+        //Temporary Code
         Recipe r1 = new Recipe("Sandwich", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
-        Recipe r2 = new Recipe("Fried Chicken", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"),new Ingredient("Ing 1")});
-        Recipe r3 = new Recipe("Fried Butter", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"),new Ingredient("Ing 1")});
-        Recipe r4 = new Recipe("Pizza", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"),new Ingredient("Ing 1")});
-        Recipe r5 = new Recipe("Mushroom stew", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"),new Ingredient("Ing 1")});
-
+        Recipe r2 = new Recipe("Fried Chicken", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
+        Recipe r3 = new Recipe("Fried Butter", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
+        Recipe r4 = new Recipe("Pizza", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
+        Recipe r5 = new Recipe("Mushroom stew", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
         final Recipe[] rlist = {r1, r2, r3, r4, r5};
 
 
-        recipeRV = (RecyclerView) findViewById(R.id.recipeRV);
+        //Recycler View Adapter
         recipeRV.setHasFixedSize(true);
-
-
         rAdapter = new recyclerAdapter(rlist, this);
-
         rLayoutManager = new LinearLayoutManager(this);
         recipeRV.setAdapter(rAdapter);
         recipeRV.setLayoutManager(rLayoutManager);
 
-        toolbar = findViewById(R.id.toolbar);
+        //Search Bar
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("Recipe Search");
         toolbar.setTitleTextColor(Color.parseColor("#FFFFFF"));
 
-        searchView = findViewById(R.id.search_view);
         searchView.setOnSearchViewListener(new MaterialSearchView.SearchViewListener() {
             @Override
             public void onSearchViewShown() {
@@ -121,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
     }
 
     @Override
@@ -130,4 +190,6 @@ public class MainActivity extends AppCompatActivity {
         searchView.setMenuItem(item);
         return true;
     }
+
 }
+
