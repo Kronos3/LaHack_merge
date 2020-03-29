@@ -2,6 +2,7 @@ package com.example.lahacksfront.networking;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import com.example.lahacksfront.Recipe;
@@ -9,7 +10,11 @@ import com.google.gson.Gson;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
@@ -19,8 +24,11 @@ import java.util.concurrent.Semaphore;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class NetworkUtils {
@@ -85,6 +93,67 @@ public class NetworkUtils {
         });
 
         return (ArrayList<Recipe>) returnObject;
+    }
+
+    public String start_process(String process_id) {
+        sendRequest(String.format("%sprocess/get/%s/", url, process_id), new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    returnObject = response.body().string();
+                    returnObject = ((String) returnObject).substring(((String) returnObject).indexOf(" ") + 1, ((String) returnObject).length() - 1);
+
+                    locker.release();
+                }
+            }
+        });
+
+        return (String) returnObject;
+    }
+
+    public String upload_file(ArrayList<Bitmap> images) {
+        MultipartBody.Builder requestBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+
+        for (int i = 0; i < images.size(); i++) {
+            String name = String.format("image%d", i);
+
+            File f = new File(name);
+            OutputStream outStream = null;
+            try {
+                outStream = new FileOutputStream(f);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            images.get(i).compress(Bitmap.CompressFormat.PNG, 90, outStream);
+            requestBodyBuilder.addFormDataPart("file", name, RequestBody.create(MediaType.parse("image/png"), f));
+        }
+
+        RequestBody requestBody = requestBodyBuilder.build();
+
+        Request request = new Request.Builder().url(url + "process/start/")
+                .post(requestBody).build();
+
+        sendRawRequest(request, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {}
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    returnObject = response.body().string();
+                    returnObject = ((String) returnObject).substring(((String) returnObject).indexOf(" ") + 1, ((String) returnObject).length() - 1);
+
+                    locker.release();
+                }
+            }
+        });
+
+        return (String)returnObject;
     }
 
     public ArrayList<Recipe> userRecipes_add(String recipe_id) {
