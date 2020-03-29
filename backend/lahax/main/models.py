@@ -10,7 +10,7 @@ from datetime import datetime
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .util import powerset
+from .util import powerset, powerset_length_split
 
 
 class Tag(models.Model):
@@ -102,6 +102,8 @@ class Recipe(models.Model):
         self.image_cache = img
         self.rating = stars_f
         self.rating_n = reviews_n
+        
+        self.save()
     
     def get_json(self):
         if self.image_cache is None:
@@ -138,11 +140,6 @@ class Recipe(models.Model):
         }
 
 
-"""
-from main.script import *
-g = Search.start_search(["corn", "butter", "beef"], 'I')
-"""
-
 class Search(models.Model):
     SEARCH_TYPES = (
         ('T', 'Tag search'),
@@ -159,6 +156,8 @@ class Search(models.Model):
     sent = models.IntegerField(default=0)
     keywords_cat = models.TextField()
     powerset_index = models.IntegerField(default=0)
+    powerset_size_index = models.IntegerField(default=0)
+    total_added = models.IntegerField(default=0)
 
     @staticmethod
     def start_search(arguments, search_type='K'):
@@ -172,71 +171,44 @@ class Search(models.Model):
         pass
     
     def poll(self, n):
-        recipes = []
+        recipes = {}
         
-        keyword_powerset = list(powerset(self.keywords_cat.split(",")))
-        keyword_powerset.sort(key=len, reverse=True)
-        keyword_powerset = keyword_powerset[:-1]  # Dont do the empty set
+        keywords = self.keywords_cat.split(",")
+        keyword_powerset = powerset_length_split(keywords)
+        if self.powerset_size_index == 0:
+            self.powerset_size_index = len(keywords)
         
-        print(keyword_powerset)
-        
-        while len(recipes) < n:
-            for i, keys in enumerate(keyword_powerset, self.powerset_index):
-                query = Q()
-        
-        """
-        if self.search_type == 'T':
-            tags = []
-            for x in arguments:
-                tags.extend(Tag.objects.filter(name__iexact=x))
-            for t in tags:
-                recipes.append(t.recipe_set.all())           
-        elif search_type == 'I':
-            ingredients = []
-            for x in arguments:
-                ingredients.extend(Ingredient.objects.filter(name__iexact=x))
-            for i in ingredients:
-                recipes.append(i.recipe_set.all())
-        else:
-            for x in arguments:
-                recipes.append(Recipe.objects.filter(name__iexact=x))
-        print(len(recipes))
+        while self.total_added < n and self.powerset_size_index > 0:
+            # Generate the query
+            query = Q()
+            while self.powerset_index < len(keyword_powerset[self.powerset_size_index]):
+                query_subset = Q()
+                for keyword in keyword_powerset[self.powerset_size_index][self.powerset_index]:
+                    if self.search_type == 'K':
+                        query_subset &= Q(name__icontains=keyword)
+                    elif self.search_type == 'I':
+                        query_subset &= Q(ingredients__name__icontains=keyword)
+                    elif self.search_type == 'T':
+                        query_subset &= Q(tags__name__icontains=keyword)
+                
+                query |= query_subset
+                self.powerset_index += 1
+            
+            print(query)
+            
+            found_from_query = Recipe.objects.filter(query).order_by('-rating', '-rating_n', 'name')
+            print(found_from_query)
+            self.total_added += len(found_from_query)
+            
+            if self.total_added < n:
+                self.powerset_index = 0
+                self.powerset_size_index -= 1
 
-        rs_list = []
-        r_list = []
-        
-        for sets in recipes:
-            print(len(sets))
-            for r in sets:
-                if r not in r_list:
-                    r_list.append(r)
-                    rs_list.append(RecipeSearch(parent_search=s, parent_recipe=r, matches=1))
-                else:
-                    rs_list[r_list.index(r)].matches += 1
-
-        for rs in rs_list:
-            rs.save()
-
-        s.save()
-        
-        return s
-        """
-    
-
-class RecipeSearch(models.Model):
-    parent_search = models.ForeignKey(Search, on_delete=models.CASCADE)
-    parent_recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    matches = models.IntegerField(default=0)
-
-    def __lt__(self, other):
-        if self.matches != other.matches:
-            return self.matches < other.matches
-        if self.parent_recipe.rating != other.parent_recipe.rating:
-            return self.parent_recipe.rating < other.parent_recipe.rating
-        if self.parent_recipe.rating_n != other.parent_recipe.rating_n:
-            return self.parent_recipe.rating_n < other.parent_recipe.rating_n
-        return self.parent_recipe.name < other.parent_recipe.name
-
+"""
+from main.script import *
+g = Search.start_search(["corn", "butter", "beef"], 'I')
+g.poll(10)
+"""
 
 class MetaUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
