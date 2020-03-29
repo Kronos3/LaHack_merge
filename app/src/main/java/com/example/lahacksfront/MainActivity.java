@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
 import androidx.appcompat.widget.Toolbar;
@@ -59,12 +60,12 @@ public class MainActivity extends AppCompatActivity {
 
         //ManualQuery
         Intent manualIntent =  getIntent();
-        query = manualIntent.getStringExtra("queryManual");
+        query = manualIntent.getStringExtra("query");
         Log.d("query", query);
 
 
-
-        final Recipe[] a = new Recipe[10];
+        ArrayList<Recipe> al = new ArrayList<>();
+        final Recipe[][] a = new Recipe[1][1];
 
         //Assign all views
         recipeRV = findViewById(R.id.recipeRV);
@@ -81,18 +82,37 @@ public class MainActivity extends AppCompatActivity {
                     String id = nu.searchId(query);
                     id = id.substring(id.indexOf(" ") + 1, id.length() - 1);
 
-                    for (int i = 0; i < 10; i++) {
-                        Log.d("test1", id);
-                        a[i] = nu.getRecipe(id);
+
+                    boolean nullRecipe = false;
+                    int i = 0;
+                    Log.d("test1", id);
+
+
+                    while(i<15 && !nullRecipe){
+                        Recipe r = nu.getRecipe(id);
+                        Log.d("recipe", r.toString());
+
+                        if(r != null){
+                            al.add(r);
+                            i++;
+                        }
+                        else{
+                            nullRecipe = true;
+                        }
 
                     }
+                    a[0] = new Recipe[al.size()];
 
-                    Log.d("recipes", Arrays.toString(a));
+                    for(int j = 0; j<al.size(); j ++){
+                        a[0][j] = al.get(j);
+                    }
+
+                    Log.d("recipes", Arrays.toString(a[0]));
 
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            rAdapter.setRecipeList(a);
+                            rAdapter.setRecipeList(a[0]);
                             recipeRV.setVisibility(View.VISIBLE);
 
                         }
@@ -116,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
         Recipe r4 = new Recipe("Pizza", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
         Recipe r5 = new Recipe("Mushroom stew", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
 
-        final Recipe[] rlist = a;
+        final Recipe[] rlist = a[0];
 
 
         //Recycler View Adapter

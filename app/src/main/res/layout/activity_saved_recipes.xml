@@ -58,9 +58,21 @@
         android:layout_marginBottom="5dp"
         android:backgroundTint="#FFFFFF"
         android:layout_alignParentRight="true"
-        android:layout_above="@+id/fab"
+        android:layout_above="@+id/fabReceipt"
         app:fabSize="mini"
         android:src="@drawable/ic_camera_alt_black_24dp" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabReceipt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="24dp"
+        android:layout_marginBottom="5dp"
+        android:backgroundTint="#FFFFFF"
+        android:layout_alignParentRight="true"
+        android:layout_above="@+id/fab"
+        app:fabSize="mini"
+        android:src="@drawable/ic_receipt_black_24dp" />
 
 
 

@@ -71,7 +71,7 @@ public class ManualEntry extends AppCompatActivity {
 
 
                 Intent intent = new Intent(ManualEntry.this, MainActivity.class);
-                intent.putExtra("queryManual", rs);
+                intent.putExtra("query", rs);
                 startActivity(intent);
 
             }

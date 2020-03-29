@@ -19,12 +19,11 @@
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/recipeImage"
             android:layout_width="100dp"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:layout_alignParentLeft="true"
             android:layout_marginRight="10dp"
             android:scaleType="centerInside"
             android:adjustViewBounds="true"
-
             >
 
 

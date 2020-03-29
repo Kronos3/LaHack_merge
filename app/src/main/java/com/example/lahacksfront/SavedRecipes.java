@@ -27,6 +27,7 @@ public class SavedRecipes extends AppCompatActivity {
     private FloatingActionButton fabCamera;
     private FloatingActionButton fabManual;
     private FloatingActionButton fabGallery;
+    private FloatingActionButton fabReceipt;
     private NetworkUtils nu;
     private String searchId;
 
@@ -45,10 +46,12 @@ public class SavedRecipes extends AppCompatActivity {
         fabCamera = findViewById(R.id.fabCamera);
         fabGallery = findViewById(R.id.fabGallery);
         fabManual = findViewById(R.id.fabManual);
+        fabReceipt = findViewById(R.id.fabReceipt);
 
         ViewAnimation.init(fabCamera);
         ViewAnimation.init(fabGallery);
         ViewAnimation.init(fabManual);
+        ViewAnimation.init(fabReceipt);
 
 
         //Floating Action Button
@@ -65,11 +68,13 @@ public class SavedRecipes extends AppCompatActivity {
                     ViewAnimation.showIn(fabCamera);
                     ViewAnimation.showIn(fabGallery);
                     ViewAnimation.showIn(fabManual);
+                    ViewAnimation.showIn(fabReceipt);
 
                 } else {
                     ViewAnimation.showOut(fabCamera);
                     ViewAnimation.showOut(fabGallery);
                     ViewAnimation.showOut(fabManual);
+                    ViewAnimation.showOut(fabReceipt);
                 }
 
             }
@@ -100,6 +105,23 @@ public class SavedRecipes extends AppCompatActivity {
                 intent.setType("image/*");
                 intent.setAction(Intent.ACTION_GET_CONTENT);
                 startActivityForResult(Intent.createChooser(intent, "Select Picture"), 1234);
+
+
+
+            }
+
+
+        });
+
+        fabReceipt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), 12346);
+
+
 
             }
 
@@ -151,8 +173,9 @@ public class SavedRecipes extends AppCompatActivity {
                     Log.d("bitmap", "123"+bitmap.toString());
                     bitmaps.add(bitmap);
 
-                    searchId = nu.start_process(nu.upload_file(bitmaps));
+                    searchId = nu.start_process(nu.upload_file_obj(bitmaps));
                     Log.d("bitmap", searchId);
+
 
                 }
 
@@ -171,14 +194,37 @@ public class SavedRecipes extends AppCompatActivity {
 
                     bitmaps.add(selectedImage);
 
-                    searchId = nu.start_process(nu.upload_file(bitmaps));
+                    searchId = nu.start_process(nu.upload_file_obj(bitmaps));
                     Log.d("bitmap", searchId);
                     /* Now you have choosen image in Bitmap format in object "yourSelectedImage". You can use it in way you want! */
                 }
 
 
+            case 12346:
+                if(resultCode == RESULT_OK){
+                    final Uri imageUri = data.getData();
+                    InputStream imageStream = null;
+                    try {
+                        imageStream = getContentResolver().openInputStream(imageUri);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
+
+                    Log.d("bitmap", "Gallery"+selectedImage.toString());
+
+                    bitmaps.add(selectedImage);
+
+                    searchId = nu.start_process(nu.upload_file_text(bitmaps));
+                    Log.d("bitmap", searchId);
+                    /* Now you have choosen image in Bitmap format in object "yourSelectedImage". You can use it in way you want! */
+                }
 
         }
+
+        Intent picIntent = new Intent(SavedRecipes.this, MainActivity.class);
+        picIntent.putExtra("query", searchId);
+        startActivity(picIntent);
 
 
 
