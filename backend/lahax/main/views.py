@@ -75,7 +75,7 @@ class OAuth2CallBack(django.views.View):
         credentials = oauth2.flow.step2_exchange(code)
 
         http = httplib2.Http()
-        http = credentials.authorize(http)
+        credentials.authorize(http)
 
         credentials_js = json.loads(credentials.to_json())
         access_token = credentials_js['access_token']
@@ -131,8 +131,7 @@ def user_data(request):
     
     user_token = request.GET.get('user_token')
     action = request.GET.get('action')
-    print(request.GET)
-    user = None
+    
     try:
         user = RecipeUser.objects.get(user_token=user_token)
     except RecipeUser.DoesNotExist:

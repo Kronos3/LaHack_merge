@@ -18,7 +18,6 @@ from django.dispatch import receiver
 from .util import powerset_length_split
 
 from google.cloud import vision
-from google.cloud.vision import types
 import os
 from django.db.models.functions import Length
 import pandas as pd
@@ -29,6 +28,7 @@ from nltk.corpus import wordnet as wn
 def get_word_types(tok):
     syn = wn.synset(tok)
     return list(set([w for s in syn.closure(lambda s: s.hyponyms()) for w in s.lemma_names()]))
+
 
 foods = get_word_types('food.n.02')
 colors = get_word_types('chromatic_color.n.01')
