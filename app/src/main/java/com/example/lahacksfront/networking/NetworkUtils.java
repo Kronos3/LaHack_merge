@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -26,7 +27,7 @@ public class NetworkUtils {
     private OkHttpClient client;
     private String url;
 
-    private Recipe returnedRecipe;
+    private Object returnObject;
     private Semaphore locker;
 
     public NetworkUtils () {
@@ -35,42 +36,10 @@ public class NetworkUtils {
         locker = new Semaphore(1);
     }
 
-    public String searchId(String query) throws IOException {
-        Log.d("query", "called Search Function");
-        Request request = new Request.Builder()
-                .url(url + "search/start/k/?search=" + query)
-                .build();
-
-
-        try (Response r = client.newCall(request).execute()) {
-            return r.body().string();
-        }
-
-
-//        client.newCall(request).enqueue(new Callback() {
-//            @Override
-//            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-//                Log.d("query", "failure");
-//                e.printStackTrace();
-//
-//            }
-//
-//            @Override
-//            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-//
-//                myResponse[0] = response.body().string();
-//
-//            }
-//
-//
-//        });
-    }
-
-    public Recipe getRecipe(String search_id) {
-
+    private void sendRequest(String url, Callback callback) {
         Request request = new Request.Builder()
                 //Temporary Test
-                .url(String.format("%ssearch/poll/%s/", this.url, search_id))
+                .url(url)
                 .build();
 
         try {
@@ -79,7 +48,46 @@ public class NetworkUtils {
             e.printStackTrace();
         }
 
-        client.newCall(request).enqueue(new Callback() {
+        client.newCall(request).enqueue(callback);
+
+        try {
+            locker.acquire();
+            locker.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ArrayList<Recipe> userRecipes() {
+        ArrayList<Recipe> out = new ArrayList<>();
+
+        return out;
+    }
+
+    public String searchId(String query) throws IOException {
+        Log.d("query", "called Search Function");
+
+        this.sendRequest(url + "search/start/k/?search=" + query, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    returnObject = response.body().string();
+                    locker.release();
+                }
+            }
+        });
+
+        return (String)returnObject;
+    }
+
+    public Recipe getRecipe(String search_id) {
+        String request_url = String.format("%ssearch/poll/%s/", this.url, search_id);
+        this.sendRequest(request_url, new Callback() {
             @Override
             public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 e.printStackTrace();
@@ -88,26 +96,17 @@ public class NetworkUtils {
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    Log.d("here", "getRecipeOnReponse");
-                    returnedRecipe = parseRecipeJson(response.body().string());
+                    returnObject = parseRecipeJson(response.body().string());
                     locker.release();
                 }
             }
         });
 
-        try {
-            locker.acquire();
-            locker.release();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return returnedRecipe;
+        return (Recipe) returnObject;
     }
 
     private static Recipe parseRecipeJson(String json) {
         Gson gson = new Gson();
         return gson.fromJson(json, Recipe.class);
-
     }
 }
