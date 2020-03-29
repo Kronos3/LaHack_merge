@@ -1,3 +1,4 @@
 main/migrations/*
 db.*
 temp/*
+datadump.json

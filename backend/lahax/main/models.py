@@ -1,3 +1,4 @@
+import math
 import re
 import secrets
 from typing import Union, List
@@ -24,13 +25,18 @@ import pandas as pd
 
 from nltk.corpus import wordnet as wn
 
+import PIL.Image
+
 
 def get_word_types(tok):
     syn = wn.synset(tok)
-    return list(set([w for s in syn.closure(lambda s: s.hyponyms()) for w in s.lemma_names()]))
+    return set([w for s in syn.closure(lambda s: s.hyponyms()) for w in s.lemma_names()])
 
 
-foods = get_word_types('food.n.02')
+foods = set()
+for food_syn in wn.synsets('food'):
+    for el in get_word_types(food_syn.name()):
+        foods.add(el)
 colors = get_word_types('chromatic_color.n.01')
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'../client_secret.json'
@@ -77,7 +83,7 @@ class Recipe(models.Model):
     
     ingredients = models.ManyToManyField(Ingredient)
     
-    image_cache = models.URLField(null=True)
+    image_cache = models.CharField(max_length=1024, null=True)
     rating = models.FloatField()
     rating_n = models.IntegerField()
     
@@ -239,7 +245,7 @@ class Search(models.Model):
             
             found_from_query = Recipe.objects.filter(query).distinct().order_by('-rating_n', '-rating', 'name')
             
-            for recipe in found_from_query[0:100]:
+            for recipe in found_from_query[0:min(len(found_from_query), 100)]:
                 try:
                     SearchRecipe.objects.get(recipe=recipe, search=self)
                 except SearchRecipe.DoesNotExist:
@@ -334,11 +340,17 @@ def save_user_profile(sender, instance, **kwargs):
 
 
 class ImageProcess(models.Model):
+    DETECTION_TYPES = (
+        ('O', 'Object'),
+        ('T', 'Text'),
+    )
+    
     search = models.OneToOneField(Search, on_delete=models.CASCADE, null=True, default=None)
+    detection = models.CharField(max_length=1, choices=DETECTION_TYPES)
     
     @staticmethod
-    def new_from_files(files: List[str]):
-        out = ImageProcess()
+    def new_from_files(detection, files: List[str]):
+        out = ImageProcess(detection=detection)
         out.save()
         
         for file in files:
@@ -361,6 +373,7 @@ class ImageProcess(models.Model):
         
         image = vision.types.Image(content=content)
         response = client.text_detection(image=image)
+        
         texts = response.text_annotations
         
         df = pd.DataFrame(columns=['locale', 'description'])
@@ -372,6 +385,9 @@ class ImageProcess(models.Model):
                 ignore_index=True
             )
         
+        if len(df['description'].values) == 0:
+            return []
+        
         toks = re.split(r"(;|,|\s| |\n)", df['description'].values[0])
         out_toks = []
         
@@ -381,11 +397,43 @@ class ImageProcess(models.Model):
         
         return out_toks
     
+    @staticmethod
+    def detect_object(img):
+        """Localize objects in the local image.
+
+        Args:
+        path: The path to the local file.
+        """
+        from google.cloud import vision
+        client = vision.ImageAnnotatorClient()
+    
+        with open(img, 'rb') as image_file:
+            content = image_file.read()
+        image = vision.types.Image(content=content)
+    
+        objects = client.object_localization(
+            image=image).localized_object_annotations
+    
+        out = []
+        for object_ in objects:
+            if object_.score > 0.6 and object_.name.lower() not in out:
+                out.append(object_.name.lower())
+        
+        print("Detected objects %s" % ", ".join(out))
+        return out
+    
     def process(self) -> List[str]:
         out = []
         
         for path in self.image_set.all():
-            text = ImageProcess.detect_text(path.filepath)
+            path.resize()
+            
+            text = []
+            if self.detection == 'T':
+                text = ImageProcess.detect_text(path.filepath)
+            elif self.detection == 'O':
+                text = ImageProcess.detect_object(path.filepath)
+            
             for token in text:
                 if token not in foods or token in out or token in colors:
                     continue
@@ -403,11 +451,27 @@ class Image(models.Model):
     date_created = models.DateTimeField(auto_now=True)
     
     parent_process = models.ForeignKey(ImageProcess, on_delete=models.CASCADE)
+    
+    def resize(self, target=10485760):
+        work = PIL.Image.open(self.filepath)
+        
+        x = work.size[0]
+        y = work.size[1]
+        
+        if x * y < target:
+            work.save(self.filepath, format='png')
+            return
+        
+        z = int(math.sqrt((y * target) / x) * 0.96)
+        w = int(((z * x)/y) * 0.96)
+
+        work = work.resize((w, z), Image.ANTIALIAS)
+        work.save(self.filepath, format='png')
 
 
 class RecipeUser(models.Model):
     added_recipes = models.ManyToManyField(Recipe)
-    user_token = models.CharField(max_length=16)
+    user_token = models.CharField(max_length=32)
     
     @staticmethod
     def new_from_token(token):
@@ -434,7 +498,6 @@ class RecipeUser(models.Model):
             return
         
         try:
-            
             self.added_recipes.add(Recipe.objects.get(recipe_id=recipe_id))
             self.save()
         except Recipe.DoesNotExist:

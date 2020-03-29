@@ -21,7 +21,7 @@ def get_login(request):
 def start_search(request, search_type: str):
     if request.method != "GET":
         return HttpResponse(status=400)
-    print("start search")
+    
     search_tokens = request.GET.get('search').split(",")
     search = Search.start_search(search_tokens, search_type.upper())
     
@@ -107,7 +107,7 @@ def image_process_get(request, process_id):
         return HttpResponse(status=404)
 
 
-def image_process(request):
+def image_process(request, detection):
     if request.method == 'POST':
         uploaded_files = []
         
@@ -116,13 +116,20 @@ def image_process(request):
             filename = fs.save("temp/%s" % request.FILES[file].name, request.FILES[file])
             uploaded_files.append(fs.url(filename))
         
-        print(uploaded_files)
-        img_p = ImageProcess.new_from_files(uploaded_files)
+        img_p = ImageProcess.new_from_files(detection, uploaded_files)
         img_p.save()
         
-        return JsonResponse({'process_id': img_p.id})
+        return HttpResponse(content=img_p.id)
     
     return render(request, 'upload.html')
+
+
+def image_process_text(request):
+    return image_process(request, 'T')
+
+
+def image_process_obj(request):
+    return image_process(request, 'O')
 
 
 def user_data(request):
