@@ -55,20 +55,28 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         NetworkUtils nu = new NetworkUtils();
 
-        final Recipe[] a = new Recipe[5];
+        final Recipe[] a = new Recipe[15];
+
+
+        //Assign all views
+        recipeRV = findViewById(R.id.recipeRV);
+        toolbar = findViewById(R.id.toolbar);
+        searchView = findViewById(R.id.search_view);
+
 
         Thread thread = new Thread(new Runnable() {
 
             @Override
             public void run() {
-                try  {
-                    Log.d("test", nu.searchId("beans"));
-                    String id = nu.searchId("beans");
-                    Thread.sleep(200);
-                    
-                    for(int i = 0; i< 5; i++){
+                try {
+                    //Log.d("test", nu.searchId("beans"));
+                    String id = nu.searchId("apple");
+                    id = id.substring(id.indexOf(" ") + 1, id.length() - 1);
+
+                    for (int i = 0; i < 15; i++) {
                         Log.d("test1", id);
                         nu.getRecipes(id, a, i);
+
 
                     }
                     Thread.sleep(1000);
@@ -78,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             rAdapter.setRecipeList(a);
+                            recipeRV.invalidate();
+
                         }
                     });
 
@@ -86,16 +96,13 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
+
+
         });
 
         thread.start();
 
 
-
-        //Assign all views
-        recipeRV = findViewById(R.id.recipeRV);
-        toolbar = findViewById(R.id.toolbar);
-        searchView = findViewById(R.id.search_view);
 
 
         //Temporary Code
@@ -104,7 +111,8 @@ public class MainActivity extends AppCompatActivity {
         Recipe r3 = new Recipe("Fried Butter", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
         Recipe r4 = new Recipe("Pizza", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
         Recipe r5 = new Recipe("Mushroom stew", new Ingredient[]{new Ingredient("Ing 1"), new Ingredient("Ing 1"), new Ingredient("Ing 1")});
-        final Recipe[] rlist = {r1, r2, r3, r4, r5};
+
+        final Recipe[] rlist = a;
 
 
         //Recycler View Adapter

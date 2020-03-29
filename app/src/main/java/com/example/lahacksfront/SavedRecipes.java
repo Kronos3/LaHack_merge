@@ -71,6 +71,15 @@ public class SavedRecipes extends AppCompatActivity {
             }
         });
 
+        fabCamera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(cameraIntent, 0);
+
+            }
+        });
+
 
     }
 

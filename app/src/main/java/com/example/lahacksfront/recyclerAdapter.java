@@ -1,7 +1,9 @@
 package com.example.lahacksfront;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.Image;
+import android.net.Uri;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +14,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.squareup.picasso.Picasso;
 
 import org.w3c.dom.Text;
 
@@ -88,15 +92,19 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
             }
 
 
-            if (ings.length() < 135) {
+            if (ings.length() < 115) {
                 p.recipeIngredients.setText(ings);
             } else {
-                p.recipeIngredients.setText(ings.substring(0, 135) + " ...");
+                p.recipeIngredients.setText(ings.substring(0, 115) + " ...");
             }
 
 
             //Set Recipe Image
-            p.recipeImage.setBackgroundResource(R.drawable.ic_launcher_background);
+            String url = recipeList[i].getImage();
+            if (url != null) {
+                Picasso.get().load(url).into(p.recipeImage);
+            }
+
 
         }
 
@@ -121,14 +129,24 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
             }
         });
 
-
     }
 
     @Override
     public recyclerViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+
         View itemView = LayoutInflater.
                 from(viewGroup.getContext()).
                 inflate(R.layout.recipe_card, viewGroup, false);
+        itemView.invalidate();
+
+        itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Log.d("url", recipeList[i].getFoodurl());
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.food.com/" + recipeList[i].getId()));
+                c.startActivity(browserIntent);
+            }
+        });
 
         return new recyclerViewHolder(itemView);
     }

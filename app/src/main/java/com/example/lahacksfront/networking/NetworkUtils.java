@@ -43,7 +43,6 @@ public class NetworkUtils {
                 .build();
 
 
-
         try (Response r = client.newCall(request).execute()) {
             return r.body().string();
         }
@@ -68,14 +67,13 @@ public class NetworkUtils {
 //        });
 
 
-
     }
 
     public void getRecipes(String id, Recipe[] recipes, int index) {
 
         Request request = new Request.Builder()
                 //Temporary Test
-                .url(url + "search/poll/test/?")
+                .url(url + "search/poll/" + id + "/?")
                 .build();
 
         final Recipe[] myResponse = new Recipe[1];
@@ -91,9 +89,11 @@ public class NetworkUtils {
                 if (response.isSuccessful()) {
 
                     Log.d("here", "getRecipeOnReponse");
-                   // Log.d("here", "" + parseRecipeJson(response.body().string().toString()));
-                   // returnedRecipe = parseRecipeJson(response.body().string());
-                    recipes[index]= parseRecipeJson(response.body().string());
+                    String r = response.body().string();
+                    Log.d("response", r);
+                    // Log.d("here", "" + parseRecipeJson(response.body().string().toString()));
+                    // returnedRecipe = parseRecipeJson(response.body().string());
+                    recipes[index] = parseRecipeJson(r);
 
                 }
             }

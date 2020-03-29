@@ -13,6 +13,7 @@ public class Recipe {
     private Ingredient[] ingredients;
     private String image;
     private String id;
+    private String foodurl;
 
 
     public Recipe(String n, Ingredient[] i){
@@ -23,6 +24,9 @@ public class Recipe {
 
     public String getName() {
         return name;
+    }
+    public String getFoodurl() {
+        return foodurl;
     }
 
     public void setName(String name) {
@@ -51,6 +55,7 @@ public class Recipe {
 
     public void setId(String id) {
         this.id = id;
+        this.foodurl = "https://www.food.com/"+id;
     }
 
     @NonNull
