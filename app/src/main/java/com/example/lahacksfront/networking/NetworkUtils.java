@@ -32,7 +32,7 @@ public class NetworkUtils {
     private Semaphore locker;
     private Gson gson;
 
-    public NetworkUtils () {
+    public NetworkUtils() {
         client = new OkHttpClient();
         url = "https://ingredible.tech/api/";
         locker = new Semaphore(1);
@@ -65,12 +65,13 @@ public class NetworkUtils {
         }
     }
 
-    public ArrayList<Recipe> userRecipes() {
+    public ArrayList<Recipe> userRecipes_remove(String recipe_id) {
         String user_token = "user";
 
-        sendRequest(url + "user_data/?user_token=" + user_token, new Callback() {
+        sendRequest(String.format("%suser_data/?user_token=%s&recipe_id=%s&action=remove", url, user_token, recipe_id), new Callback() {
             @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {}
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            }
 
             @Override
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
@@ -83,7 +84,69 @@ public class NetworkUtils {
             }
         });
 
-        return (ArrayList<Recipe>)returnObject;
+        return (ArrayList<Recipe>) returnObject;
+    }
+
+    public ArrayList<Recipe> userRecipes_add(String recipe_id) {
+        String user_token = "user";
+
+        sendRequest(String.format("%suser_data/?user_token=%s&recipe_id=%s&action=add", url, user_token, recipe_id), new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Recipe[] recipes = gson.fromJson(response.body().string(), Recipe[].class);
+                    returnObject = new ArrayList<>(Arrays.asList(recipes));
+
+                    locker.release();
+                }
+            }
+        });
+
+        return (ArrayList<Recipe>) returnObject;
+    }
+
+    public ArrayList<Recipe> userRecipes() {
+        String user_token = "user";
+
+        sendRequest(url + "user_data/?user_token=" + user_token, new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Recipe[] recipes = gson.fromJson(response.body().string(), Recipe[].class);
+                    returnObject = new ArrayList<>(Arrays.asList(recipes));
+
+                    locker.release();
+                }
+            }
+        });
+
+        return (ArrayList<Recipe>) returnObject;
+    }
+
+    public String getNewUserId() {
+        sendRequest(url + "user_data/request/", new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    returnObject = response.body().string();
+                    locker.release();
+                }
+            }
+        });
+
+        return (String) returnObject;
     }
 
     public String searchId(String query) throws IOException {
@@ -104,7 +167,7 @@ public class NetworkUtils {
             }
         });
 
-        return (String)returnObject;
+        return (String) returnObject;
     }
 
     public Recipe getRecipe(String search_id) {
