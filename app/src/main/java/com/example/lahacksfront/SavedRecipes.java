@@ -4,7 +4,10 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -12,6 +15,9 @@ import android.view.View;
 import android.widget.ImageView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 public class SavedRecipes extends AppCompatActivity {
 
@@ -66,7 +72,7 @@ public class SavedRecipes extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(cameraIntent, 0);
+                startActivityForResult(cameraIntent, 12345);
 
             }
         });
@@ -86,19 +92,75 @@ public class SavedRecipes extends AppCompatActivity {
                 Intent intent = new Intent();
                 intent.setType("image/*");
                 intent.setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(Intent.createChooser(intent, "Select Picture"), 0);
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), 1234);
 
             }
+
+
         });
 
 
     }
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data)
+//    {
+//        super.onActivityResult(requestCode, resultCode, data);
+//
+//        switch(requestCode) {
+//            case 1234:
+//                if(resultCode == RESULT_OK){
+//                    Uri selectedImage = data.getData();
+//                    String[] filePathColumn = {MediaStore.Images.Media.DATA};
+//
+//                    Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+//                    cursor.moveToFirst();
+//
+//                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+//                    String filePath = cursor.getString(columnIndex);
+//                    cursor.close();
+//
+//
+//                    Bitmap yourSelectedImage = BitmapFactory.decodeFile(filePath);
+//                    Log.d("bitmap", "123"+yourSelectedImage.toString());
+//                    /* Now you have choosen image in Bitmap format in object "yourSelectedImage". You can use it in way you want! */
+//                }
+//            case 12345:
+//                Bitmap bitmap = (Bitmap)data.getExtras().get("data");
+//                Log.d("bitmap", "123"+bitmap.toString());
+//        }
+//
+//    };
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode){
+            case 12345:
+                if(resultCode == RESULT_OK){
+                    Bitmap bitmap = (Bitmap)data.getExtras().get("data");
+                    Log.d("bitmap", "123"+bitmap.toString());
 
-        Bitmap bitmap = (Bitmap)data.getExtras().get("data");
+                }
+
+            case 1234:
+                if(resultCode == RESULT_OK){
+                    final Uri imageUri = data.getData();
+                    InputStream imageStream = null;
+                    try {
+                        imageStream = getContentResolver().openInputStream(imageUri);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
+
+                    Log.d("bitmap", "123"+selectedImage.toString());
+                    /* Now you have choosen image in Bitmap format in object "yourSelectedImage". You can use it in way you want! */
+                }
+
+
+
+        }
+
 
 
     }
