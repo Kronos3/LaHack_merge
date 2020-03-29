@@ -1,4 +1,5 @@
-from typing import Union
+from typing import Union, List
+import io
 
 import django
 import requests
@@ -12,7 +13,17 @@ from datetime import datetime
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .util import powerset, powerset_length_split
+from .util import powerset_length_split
+
+from google.cloud import vision
+from google.cloud.vision import types
+import os
+from django.db.models.functions import Length
+import pandas as pd
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'../client_secret.json'
+
+client = vision.ImageAnnotatorClient()
 
 
 class Tag(models.Model):
@@ -179,7 +190,11 @@ class Search(models.Model):
             if self.buffer(10) == 0:
                 return None
         
-        out = SearchRecipe.objects.filter(priority=self.sent, search=self)[0]
+        out_query = SearchRecipe.objects.filter(priority=self.sent, search=self)
+        if len(out_query) == 0:
+            return None
+        out = out_query[0]
+        
         self.sent += 1
         
         self.save()
@@ -187,7 +202,6 @@ class Search(models.Model):
         return out.recipe
     
     def buffer(self, n):
-        
         keywords = self.keywords_cat.split(",")
         keyword_powerset = powerset_length_split(keywords)
         if self.powerset_size_index == 0:
@@ -305,3 +319,65 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.metauser.save()
+
+
+class ImageProcess(models.Model):
+    search = models.OneToOneField(Search, on_delete=models.CASCADE, null=True, default=None)
+    
+    @staticmethod
+    def new_from_files(files: List[str]):
+        out = ImageProcess()
+        out.save()
+        
+        for file in files:
+            fp = Image(filepath=file, parent_process=out)
+            fp.save()
+        
+        out.save()
+        return out
+    
+    def start(self) -> Search:
+        tokens = self.process()
+        self.search = Search.start_search(tokens, search_type="I")
+        
+        return self.search
+    
+    @staticmethod
+    def detect_text(img):
+        with io.open(img, 'rb') as image_file:
+            content = image_file.read()
+        
+        image = vision.types.Image(content=content)
+        response = client.text_detection(image=image)
+        texts = response.text_annotations
+        
+        df = pd.DataFrame(columns=['locale', 'description'])
+        
+        for text in texts:
+            df = df.append(
+                dict(locale=text.locale,
+                     description=text.description),
+                ignore_index=True
+            )
+        
+        return df
+    
+    def process(self) -> List[str]:
+        out = []
+        
+        for path in self.image_set.all():
+            text = ImageProcess.detect_text(path.filepath)
+            for token in text:
+                matching_ingredients = Ingredient.objects.filter(name__icontains=token).order_by(Length('name').asc())
+                if len(matching_ingredients) != 0:
+                    out.append(*matching_ingredients)
+            print(text)
+        
+        return out
+
+
+class Image(models.Model):
+    filepath = models.CharField(max_length=1024)
+    date_created = models.DateTimeField(auto_now=True)
+    
+    parent_process = models.ForeignKey(ImageProcess, on_delete=models.CASCADE)

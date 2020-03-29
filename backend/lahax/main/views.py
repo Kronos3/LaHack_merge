@@ -1,7 +1,9 @@
 import json
 
 import httplib2
+from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, HttpResponseNotAllowed
+from django.shortcuts import render
 from oauth2client.client import OAuth2WebServerFlow
 from django.conf import settings
 import django.views
@@ -27,17 +29,23 @@ def start_search(request, search_type: str):
     
     return JsonResponse({"search_id": search.id})
 
+
 def poll_search(request, search_id):
     if search_id == 'test':
         return JsonResponse(Recipe.objects.all()[0].get_json())
     
-    search = Search.objects.get(id=search_id)
+    try:
+        search = Search.objects.get(id=search_id)
+    except Search.DoesNotExist:
+        return JsonResponse({})
+    
     recipe_found = search.poll()
     
     if recipe_found is None:
         return JsonResponse({})
     else:
         return JsonResponse(recipe_found.get_json())
+
 
 class BuildFlow:
     def __init__(self):
@@ -87,3 +95,31 @@ class OAuth2CallBack(django.views.View):
 
 def index(request):
     return HttpResponse("")
+
+
+def image_process_get(request, process_id):
+    try:
+        process = ImageProcess.objects.get(id=process_id)
+        search = process.start()
+        
+        return JsonResponse({'search_id': search.id})
+    except ImageProcess.DoesNotExist:
+        return HttpResponse(status=404)
+
+
+def image_process(request):
+    if request.method == 'POST':
+        uploaded_files = []
+        
+        for file in request.FILES:
+            fs = FileSystemStorage()
+            filename = fs.save("temp/%s" % request.FILES[file].name, request.FILES[file])
+            uploaded_files.append(fs.url(filename))
+        
+        print(uploaded_files)
+        img_p = ImageProcess.new_from_files(uploaded_files)
+        img_p.save()
+        
+        return JsonResponse({'process_id': img_p.id})
+    
+    return render(request, 'upload.html')
