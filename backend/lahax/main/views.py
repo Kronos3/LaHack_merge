@@ -16,17 +16,28 @@ def get_login(request):
     return JsonResponse(request.user.get_json())
 
 
-def start_search(request, search_type):
+def start_search(request, search_type: str):
     if request.method != "GET":
         return HttpResponse(status=400)
-    print(request.GET)
-    search_tokens = request.GET.get('search')
+    print("start search")
+    search_tokens = request.GET.get('search').split(",")
+    search = Search.start_search(search_tokens, search_type.upper())
     
-    return JsonResponse({"search_id": "test"})
+    search.save()
+    
+    return JsonResponse({"search_id": search.id})
 
 def poll_search(request, search_id):
     if search_id == 'test':
         return JsonResponse(Recipe.objects.all()[0].get_json())
+    
+    search = Search.objects.get(id=search_id)
+    recipe_found = search.poll()
+    
+    if recipe_found is None:
+        return JsonResponse({})
+    else:
+        return JsonResponse(recipe_found.get_json())
 
 class BuildFlow:
     def __init__(self):

@@ -1,3 +1,5 @@
+from typing import Union
+
 import django
 import requests
 from bs4 import BeautifulSoup
@@ -110,7 +112,7 @@ class Recipe(models.Model):
             self.fill_metadata()
         
         if self.image_cache is None:
-            print("Failed to get image for '%s' id '%s'" % (self.name, self.id))
+            print("Failed to get image for '%s' id '%s'" % (self.name, self.recipe_id))
         
         tag_list = []
         for tag in self.tags.all():
@@ -158,6 +160,8 @@ class Search(models.Model):
     powerset_index = models.IntegerField(default=0)
     powerset_size_index = models.IntegerField(default=0)
     total_added = models.IntegerField(default=0)
+    
+    found = models.ManyToManyField(Recipe, through='SearchRecipe')
 
     @staticmethod
     def start_search(arguments, search_type='K'):
@@ -170,13 +174,26 @@ class Search(models.Model):
     def generate_search_query() -> Q:
         pass
     
-    def poll(self, n):
-        recipes = {}
+    def poll(self) -> Union[Recipe, None]:
+        if self.sent == self.total_added:
+            if self.buffer(10) == 0:
+                return None
+        
+        out = SearchRecipe.objects.filter(priority=self.sent, search=self)[0]
+        self.sent += 1
+        
+        self.save()
+        
+        return out.recipe
+    
+    def buffer(self, n):
         
         keywords = self.keywords_cat.split(",")
         keyword_powerset = powerset_length_split(keywords)
         if self.powerset_size_index == 0:
             self.powerset_size_index = len(keywords)
+        
+        old_total = self.total_added + n
         
         while self.total_added < n and self.powerset_size_index > 0:
             # Generate the query
@@ -196,19 +213,37 @@ class Search(models.Model):
             
             print(query)
             
-            found_from_query = Recipe.objects.filter(query).order_by('-rating', '-rating_n', 'name')
+            found_from_query = Recipe.objects.filter(query).order_by('-rating_n', '-rating', 'name')
             print(found_from_query)
-            self.total_added += len(found_from_query)
             
+            for recipe in found_from_query[0:100]:
+                add = SearchRecipe(recipe=recipe, search=self, priority=self.total_added)
+                add.save()
+                
+                self.total_added += 1
+
             if self.total_added < n:
                 self.powerset_index = 0
                 self.powerset_size_index -= 1
+        
+        self.save()
+        
+        return self.total_added - old_total
+
 
 """
 from main.script import *
 g = Search.start_search(["corn", "butter", "beef"], 'I')
-g.poll(10)
+g.buffer(10)
 """
+
+
+class SearchRecipe(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    search = models.ForeignKey(Search, on_delete=models.CASCADE)
+    
+    priority = models.IntegerField()
+
 
 class MetaUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
