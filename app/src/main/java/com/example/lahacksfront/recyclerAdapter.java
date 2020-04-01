@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.lahacksfront.networking.NetworkUtils;
 import com.squareup.picasso.Picasso;
 
 import org.w3c.dom.Text;
@@ -25,8 +26,14 @@ import java.util.List;
 
 public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recyclerViewHolder> {
 
-    private Recipe[] recipeList;
-    private Context c;
+    public static Recipe[] recipeList;
+    private static Context c;
+    private NetworkUtils nu = new NetworkUtils();
+
+    protected ArrayList<Recipe> al = nu.userRecipes();
+    ArrayList<String> userIds = new ArrayList<>();
+
+
 
 
     public recyclerAdapter(Recipe[] recipeList, Context c) {
@@ -48,6 +55,11 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
 
     @Override
     public void onBindViewHolder(final recyclerViewHolder p, int i) {
+        for(int j = 0; j< al.size(); j++){
+            userIds.add(al.get(j).getId());
+        }
+
+
 
         if (recipeList[i] != null) {
             //Set Recipe Name
@@ -110,29 +122,20 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
 
             }
 
+            //Handle Bookmarks
+            Log.d("index", ""+i);
+            if(userIds.contains(recipeList[i].getId())){
+                p.bookmark.setImageResource(R.drawable.ic_bookmark_black_24dp);
+            }
+            else{
+                p.bookmark.setImageResource(R.drawable.ic_bookmark_blank_24dp);
+            }
+
 
         }
 
 
-        //Bookmark Logic
-        p.bookmark.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
 
-                switch (p.bookmark.getTag().toString()) {
-                    case "" + R.drawable.ic_bookmark_blank_24dp:
-                        p.bookmark.setImageResource(R.drawable.ic_bookmark_black_24dp);
-                        p.bookmark.setTag(R.drawable.ic_bookmark_black_24dp);
-                        break;
-                    case "" + R.drawable.ic_bookmark_black_24dp:
-                    default:
-                        p.bookmark.setImageResource(R.drawable.ic_bookmark_blank_24dp);
-                        p.bookmark.setTag(R.drawable.ic_bookmark_blank_24dp);
-                        break;
-                }
-
-            }
-        });
 
     }
 
@@ -145,14 +148,8 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
         itemView.invalidate();
 
 
-        itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Log.d("url", recipeList[i].getFoodurl());
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.food.com/" + recipeList[i].getId()));
-                c.startActivity(browserIntent);
-            }
-        });
+
+
 
         return new recyclerViewHolder(itemView);
     }
@@ -172,6 +169,41 @@ public class recyclerAdapter extends RecyclerView.Adapter<recyclerAdapter.recycl
             recipeIngredients = v.findViewById(R.id.recipeIngredients);
             bookmark = v.findViewById(R.id.bookmark);
             bookmark.setTag(R.drawable.ic_bookmark_blank_24dp);
+            NetworkUtils nu = new NetworkUtils();
+
+            v.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    //Log.d("url", i+" "+recipeList[i].toString());
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.food.com/" + recipeList[getAdapterPosition()].getId()));
+                    c.startActivity(browserIntent);
+                }
+            });
+
+
+            //Bookmark Logic
+                bookmark.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    switch (bookmark.getTag().toString()) {
+                        case "" + R.drawable.ic_bookmark_blank_24dp:
+                            bookmark.setImageResource(R.drawable.ic_bookmark_black_24dp);
+                            bookmark.setTag(R.drawable.ic_bookmark_black_24dp);
+                            nu.userRecipes_add(recipeList[getAdapterPosition()].getId());
+
+                            break;
+                        case "" + R.drawable.ic_bookmark_black_24dp:
+                        default:
+                            bookmark.setImageResource(R.drawable.ic_bookmark_blank_24dp);
+                            bookmark.setTag(R.drawable.ic_bookmark_blank_24dp);
+                            nu.userRecipes_remove(recipeList[getAdapterPosition()].getId());
+                            break;
+                    }
+
+                }
+            });
 
 
         }

@@ -41,7 +41,7 @@ import okhttp3.Response;
 import static org.awaitility.Awaitility.await;
 
 
-public class MainActivity extends AppCompatActivity {
+public class saveMenu extends AppCompatActivity {
 
     //Views
     private RecyclerView recipeRV;
@@ -53,22 +53,18 @@ public class MainActivity extends AppCompatActivity {
     private TextView loadingText;
     private NetworkUtils networkUtils;
 
+    private ArrayList<Recipe> al;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_save_menu);
         NetworkUtils nu = new NetworkUtils();
         final String[] id = {""};
 
-        //ManualQuery
-        Intent manualIntent =  getIntent();
-        query = manualIntent.getStringExtra("query");
-        id[0] = manualIntent.getStringExtra("querySearchId");
-        //Log.d("query", id[0]);
 
 
-        ArrayList<Recipe> al = new ArrayList<>();
         final Recipe[][] a = new Recipe[1][1];
 
         //Assign all views
@@ -83,40 +79,23 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    //Log.d("test", nu.searchId("beans"));
-                    if(id[0] == null){
-                        id[0] = nu.searchId(query);
-                        id[0] = id[0].substring(id[0].indexOf(" ") + 1, id[0].length() - 1);
-                    }
+                    //networking call for saved recipes
 
+                    al = nu.userRecipes();
 
-                    boolean nullRecipe = false;
-                    int i = 0;
+                    Log.d("userRecipes", al.toString());
 
-
-
-                    while(i<15 && !nullRecipe){
-                        Recipe r = nu.getRecipe(id[0]);
-                        //Log.d("recipe", r.toString());
-
-                        if(r != null){
-                            al.add(r);
-                            i++;
-                        }
-                        else{
-                            nullRecipe = true;
-                        }
-
-                    }
                     a[0] = new Recipe[al.size()];
 
                     for(int j = 0; j<al.size(); j ++){
                         a[0][j] = al.get(j);
                     }
 
-                    //Log.d("recipes", Arrays.toString(a[0]));
 
-                    MainActivity.this.runOnUiThread(new Runnable() {
+
+                    Log.d("recipes", Arrays.toString(a[0]));
+
+                    saveMenu.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             rAdapter.setRecipeList(a[0]);
@@ -149,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Recycler View Adapter
         recipeRV.setHasFixedSize(true);
-        rAdapter = new recyclerAdapter(a[0], this);
+        rAdapter = new recyclerAdapter(rlist, this);
         rLayoutManager = new LinearLayoutManager(this);
         recipeRV.setAdapter(rAdapter);
         recipeRV.setLayoutManager(rLayoutManager);
@@ -168,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSearchViewClosed() {
 
-                recyclerAdapter rvAdapter = new recyclerAdapter(a[0], MainActivity.this);
+                recyclerAdapter rvAdapter = new recyclerAdapter(rlist, saveMenu.this);
                 recipeRV.setAdapter(rvAdapter);
                 recipeRV.invalidate();
 
@@ -190,8 +169,8 @@ public class MainActivity extends AppCompatActivity {
 
 
                     ArrayList<Recipe> listFoundTemp = new ArrayList<>();
-                    for (Recipe item : a[0]) {
-                        //Log.d("im here", "" + Arrays.toString(a[0]));
+                    for (Recipe item : rlist) {
+                        Log.d("im here", "" + Arrays.toString(rlist));
                         Log.d("im here", "" + item);
 
                         if (item.getName().toLowerCase().contains(newText.toLowerCase())) {
@@ -207,12 +186,12 @@ public class MainActivity extends AppCompatActivity {
 
 
                     recipeRV.invalidate();
-                    recyclerAdapter rvAdapter = new recyclerAdapter(listFound, MainActivity.this);
+                    recyclerAdapter rvAdapter = new recyclerAdapter(listFound, saveMenu.this);
                     recipeRV.setAdapter(rvAdapter);
 
 
                 } else {
-                    recyclerAdapter rvAdapter = new recyclerAdapter(a[0], MainActivity.this);
+                    recyclerAdapter rvAdapter = new recyclerAdapter(rlist, saveMenu.this);
                     recipeRV.setAdapter(rvAdapter);
                     recipeRV.invalidate();
                 }

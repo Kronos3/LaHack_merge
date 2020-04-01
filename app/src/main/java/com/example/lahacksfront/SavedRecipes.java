@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 
 import com.example.lahacksfront.networking.NetworkUtils;
@@ -28,6 +29,7 @@ public class SavedRecipes extends AppCompatActivity {
     private FloatingActionButton fabManual;
     private FloatingActionButton fabGallery;
     private FloatingActionButton fabReceipt;
+    private Button saved;
     private NetworkUtils nu;
     private String searchId;
 
@@ -47,11 +49,23 @@ public class SavedRecipes extends AppCompatActivity {
         fabGallery = findViewById(R.id.fabGallery);
         fabManual = findViewById(R.id.fabManual);
         fabReceipt = findViewById(R.id.fabReceipt);
+        saved = findViewById(R.id.savebutton);
 
         ViewAnimation.init(fabCamera);
         ViewAnimation.init(fabGallery);
         ViewAnimation.init(fabManual);
         ViewAnimation.init(fabReceipt);
+
+
+        saved.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent saveIntent = new Intent(SavedRecipes.this, saveMenu.class);
+                startActivity(saveIntent);
+
+            }
+        });
 
 
         //Floating Action Button
@@ -81,10 +95,13 @@ public class SavedRecipes extends AppCompatActivity {
         });
 
         fabCamera.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
                 Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                startActivityForResult(cameraIntent, 12345);
+                Log.d("camera", "camera");
+                startActivityForResult(cameraIntent, 0);
+
 
             }
         });
@@ -104,7 +121,10 @@ public class SavedRecipes extends AppCompatActivity {
                 Intent intent = new Intent();
                 intent.setType("image/*");
                 intent.setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(Intent.createChooser(intent, "Select Picture"), 1234);
+                Log.d("camera", "camera2");
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), 1);
+
+
 
 
 
@@ -166,11 +186,13 @@ public class SavedRecipes extends AppCompatActivity {
         ArrayList<Bitmap> bitmaps = new ArrayList<>();
 
         super.onActivityResult(requestCode, resultCode, data);
+        Log.d("requestCode", ""+requestCode);
         switch (requestCode){
-            case 12345:
+            case 0:
                 if(resultCode == RESULT_OK){
+
                     Bitmap bitmap = (Bitmap)data.getExtras().get("data");
-                    Log.d("bitmap", "123"+bitmap.toString());
+                    Log.d("bitmap", "Camera"+bitmap.toString());
                     bitmaps.add(bitmap);
 
                     searchId = nu.start_process(nu.upload_file_obj(bitmaps));
@@ -178,8 +200,10 @@ public class SavedRecipes extends AppCompatActivity {
 
 
                 }
+                break;
 
-            case 1234:
+            case 1:
+                Log.d("camera", "camera22");
                 if(resultCode == RESULT_OK){
                     final Uri imageUri = data.getData();
                     InputStream imageStream = null;
@@ -199,6 +223,7 @@ public class SavedRecipes extends AppCompatActivity {
                     /* Now you have choosen image in Bitmap format in object "yourSelectedImage". You can use it in way you want! */
                 }
 
+                break;
 
             case 12346:
                 if(resultCode == RESULT_OK){
@@ -219,11 +244,12 @@ public class SavedRecipes extends AppCompatActivity {
                     Log.d("bitmap", searchId);
                     /* Now you have choosen image in Bitmap format in object "yourSelectedImage". You can use it in way you want! */
                 }
+                break;
 
         }
 
         Intent picIntent = new Intent(SavedRecipes.this, MainActivity.class);
-        picIntent.putExtra("query", searchId);
+        picIntent.putExtra("querySearchId", searchId);
         startActivity(picIntent);
 
 

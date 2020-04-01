@@ -22,6 +22,7 @@ import java.util.ConcurrentModificationException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -42,7 +43,11 @@ public class NetworkUtils {
     private Gson gson;
 
     public NetworkUtils() {
-        client = new OkHttpClient();
+        client = new OkHttpClient.Builder()
+                .connectTimeout(15,TimeUnit.SECONDS)
+                .readTimeout(25,TimeUnit.SECONDS)
+                .build();
+
         url = "https://ingredible.tech/api/";
         locker = new Semaphore(1);
         gson = new Gson();
@@ -143,7 +148,7 @@ public class NetworkUtils {
             public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
                 if (response.isSuccessful()) {
                     returnObject = response.body().string();
-                    returnObject = ((String) returnObject).substring(((String) returnObject).indexOf(" ") + 1, ((String) returnObject).length() - 1);
+                    //returnObject = ((String) returnObject).substring(((String) returnObject).indexOf(" ") + 1, ((String) returnObject).length() - 1);
 
                     locker.release();
                 }
